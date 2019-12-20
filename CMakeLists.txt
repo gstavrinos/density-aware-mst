@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 11)
 
 include(GNUInstallDirs)
 
+find_package(catkin REQUIRED COMPONENTS
+    roboskel_msgs
+    sensor_msgs
+    roscpp
+)
+
 set(LIBRARY_TARGET_NAME ${PROJECT_NAME})
 
 set(${LIBRARY_TARGET_NAME}_SRC
@@ -19,12 +25,19 @@ find_package(Boost REQUIRED COMPONENTS
     graph
 )
 
+catkin_package()
+
 file(TO_CMAKE_PATH "${PROJECT_BINARY_DIR}/CMakeLists.txt" LOC_PATH)
 if(EXISTS "${LOC_PATH}")
     message(FATAL_ERROR "You cannot build in a source directory (or any directory with a CMakeLists.txt file). Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
 endif()
 
-include_directories(include ${LIBRARY_TARGET_NAME} ${Boost_INCLUDE_DIRS})
+include_directories(
+    include
+    ${LIBRARY_TARGET_NAME}
+    ${Boost_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
+)
 
 add_library(${LIBRARY_TARGET_NAME} SHARED
     src/damst.cpp   

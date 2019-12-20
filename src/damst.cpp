@@ -9,6 +9,23 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const unsig
     return result;
 }
 
+std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls){
+    size_t ss = ls.scans.size();
+    size_t num_nodes = 0;
+    for (unsigned int i=0; i<ss; i++) {
+        size_t rs = ls.scans[i].ranges.size(); 
+        for (unsigned int j=0; j<rs; j++) {
+            num_nodes++;
+            if (j+1 < rs) {
+                ls_edges.push_back(LaserScanEdge(Edge(i,j),Edge(i,j+1)));
+                // TODO weight, based on polar distance
+                //
+            }
+        }
+    }
+
+}
+
 // Seeing dots instead of edge labels?
 // sudo apt install xfonts-100dpi
 // and reboot
@@ -44,7 +61,6 @@ void DensityAwareMST::printResultTree(){
         std::cout << boost::source(*ei, *graph) << " 🠜🠞 " << boost::target(*ei, *graph) << " with weight: " << weight[*ei] << std::endl;
     }
 }
-
 
 const std::vector<DensityAwareMST::EdgeDesc>& DensityAwareMST::getResult() const{
     return result;
