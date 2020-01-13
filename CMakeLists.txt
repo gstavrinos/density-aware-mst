@@ -53,3 +53,6 @@ target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
 add_executable(test_damst1 test/test_damst1.cpp)
 target_link_libraries(test_damst1 ${LIBRARY_TARGET_NAME})
 
+add_executable(test_damst2 test/test_damst2.cpp)
+target_link_libraries(test_damst2 ${LIBRARY_TARGET_NAME} ${catkin_LIBRARIES})
+

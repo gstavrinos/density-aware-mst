@@ -25,6 +25,6 @@ int main() {
     std::cout << "First pair of the result" << std::endl;
     std::cout << mst.getResult()[0] << std::endl;
 
-    mst.visualizeReultTree();
+    mst.visualizeResultTree();
     return EXIT_SUCCESS;
 }
