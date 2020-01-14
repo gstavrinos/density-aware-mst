@@ -8,7 +8,6 @@ ros::Subscriber sub;
 
 
 void laserCallback(const sensor_msgs::LaserScan& ls) {
-    ROS_INFO("LASER MSG");
     if (l.scans.size() < 3) {
         l.scans.push_back(ls);
     }
@@ -17,8 +16,8 @@ void laserCallback(const sensor_msgs::LaserScan& ls) {
         damst::DensityAwareMST mst;
         std::vector<damst::DensityAwareMST::EdgeDesc> result = mst.generateTree(l, 3);
         mst.printResultTree();
-        mst.createDottyGraph();
-        mst.visualizeResultTree();
+        // mst.createDottyGraph();
+        // mst.visualizeResultTree();
     }
 }
 

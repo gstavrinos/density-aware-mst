@@ -18,8 +18,8 @@ class DensityAwareMST{
         using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
         using Edge = std::pair<unsigned, unsigned>;
         // For laserscans, we use two "edges" to describe an edge
-        // the first edge (pair) consists of the indeces of the first laserscan and point
-        // and the second edge (pair) consists of the indeces of the second laserscan and point
+        // the first edge (pair) consists of the indices of the first laserscan and point
+        // and the second edge (pair) consists of the indices of the second laserscan and point
         using LaserScanEdge = std::pair<Edge, Edge>;
         std::vector<Edge> edges;
         std::vector<double> weights;
@@ -42,8 +42,9 @@ class DensityAwareMST{
         std::vector<LaserScanEdge> ls_edges;
         std::vector<EdgeDesc> result;
 
-        double dist(const roboskel_msgs::LaserScans&, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
+        double dist(const roboskel_msgs::LaserScans*, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
         unsigned numberOfEdges() const;
+        unsigned numberOfLsEdges() const;
 
 };
 

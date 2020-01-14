@@ -2,26 +2,27 @@
 
 namespace damst {
 
-std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const unsigned num_nodes){
+std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const unsigned num_nodes) {
     std::cout << &edges[0] << std::endl;
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
     boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
     return result;
 }
 
-std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const unsigned nn){
+std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
     size_t ss = ls.scans.size();
     size_t num_nodes = 0;
     for (unsigned i=0; i<ss; i++) {
         size_t rs = ls.scans[i].ranges.size(); 
         for (unsigned j=0; j<rs; j++) {
-            num_nodes++;
             if (j+1 < rs) {
-                ls_edges.push_back(LaserScanEdge(Edge(i,j),Edge(i,j+1)));
-                weights.push_back(dist(ls, i,j,i,j+1));
+                num_nodes++;
+                //ls_edges.push_back(LaserScanEdge(Edge(i,j),Edge(i,j+1)));
+                edges.push_back(Edge(i*rs+j, i*rs+j+1));
+                weights.push_back(dist(&ls, i, j, i, j+1));
             }
             if (i+1 < ss) {
-                for (unsigned n=j-nn; n<=j+nn; j++) {
+                for (unsigned n=j-nn; n<=j+nn; n++) {
                     // I am checking with the current
                     // laserscan and not with the next one
                     // to avoid a call to .size(). I should
@@ -30,27 +31,33 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
                     // BUT: (TODO) If I ever encounter crashes,
                     // this is the place to look for first.
                     if (n >= 0 and n < rs) {
-                        ls_edges.push_back(LaserScanEdge(Edge(i,j),Edge(i+1,n)));
-                        weights.push_back(dist(ls, i,j,i+1,n));
+                        num_nodes++;
+                        //ls_edges.push_back(LaserScanEdge(Edge(i,j),Edge(i+1,n)));
+                        edges.push_back(Edge(i*rs+j, (i+1)*rs+n));
+                        weights.push_back(dist(&ls, i, j, i+1, n));
                     }
                 }
             }
         }
     }
+    graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
+    // graph = new Graph(&ls_edges[0], &ls_edges[0]+numberOfLsEdges(), &weights[0], num_nodes);
+    boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
+    return result;
 }
 
-double DensityAwareMST::dist(const roboskel_msgs::LaserScans& ls, const uint8_t i1, const uint8_t j1, const uint8_t i2, const uint8_t j2) const{
-    double r1 = ls.scans[i1].ranges[j1];
-    double r2 = ls.scans[i2].ranges[j2];
-    double theta1 = ls.scans[i1].angle_min + j1 * ls.scans[i1].angle_increment;
-    double theta2 = ls.scans[i2].angle_min + j2 * ls.scans[i2].angle_increment;
+double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const uint8_t i1, const uint8_t j1, const uint8_t i2, const uint8_t j2) const {
+    double r1 = ls->scans[i1].ranges[j1];
+    double r2 = ls->scans[i2].ranges[j2];
+    double theta1 = ls->scans[i1].angle_min + j1 * ls->scans[i1].angle_increment;
+    double theta2 = ls->scans[i2].angle_min + j2 * ls->scans[i2].angle_increment;
     return sqrt(r1*r1 + r2*r2 - 2*r1*r2*(cos(theta1-theta2)));
 }
 
 // Seeing dots instead of edge labels?
 // sudo apt install xfonts-100dpi
 // and reboot
-void DensityAwareMST::createDottyGraph() const{
+void DensityAwareMST::createDottyGraph() const {
     std::ofstream fout("damst_result.dot");
     fout << "Graph A {\n"
     << " rankdir=LR\n"
@@ -72,8 +79,12 @@ void DensityAwareMST::createDottyGraph() const{
     fout << "}\n";
 }
 
-unsigned DensityAwareMST::numberOfEdges() const{
+unsigned DensityAwareMST::numberOfEdges() const {
     return edges.size();
+}
+
+unsigned DensityAwareMST::numberOfLsEdges() const {
+    return ls_edges.size();
 }
 
 void DensityAwareMST::printResultTree(){
@@ -83,11 +94,11 @@ void DensityAwareMST::printResultTree(){
     }
 }
 
-const std::vector<DensityAwareMST::EdgeDesc>& DensityAwareMST::getResult() const{
+const std::vector<DensityAwareMST::EdgeDesc>& DensityAwareMST::getResult() const {
     return result;
 }
 
-void DensityAwareMST::visualizeResultTree() const{
+void DensityAwareMST::visualizeResultTree() const {
     DensityAwareMST::createDottyGraph();
     std::system("dotty damst_result.dot &");
 }
