@@ -17,7 +17,6 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
         for (unsigned j=0; j<rs; j++) {
             if (j+1 < rs) {
                 num_nodes++;
-                //ls_edges.push_back(LaserScanEdge(Edge(i,j),Edge(i,j+1)));
                 edges.push_back(Edge(i*rs+j, i*rs+j+1));
                 weights.push_back(dist(&ls, i, j, i, j+1));
             }
@@ -32,7 +31,6 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
                     // this is the place to look for first.
                     if (n >= 0 and n < rs) {
                         num_nodes++;
-                        //ls_edges.push_back(LaserScanEdge(Edge(i,j),Edge(i+1,n)));
                         edges.push_back(Edge(i*rs+j, (i+1)*rs+n));
                         weights.push_back(dist(&ls, i, j, i+1, n));
                     }
@@ -41,10 +39,41 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
         }
     }
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
-    // graph = new Graph(&ls_edges[0], &ls_edges[0]+numberOfLsEdges(), &weights[0], num_nodes);
     boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
     return result;
 }
+
+double DensityAwareMST::score(const Graph* g) const {
+    unsigned num_nodes = 0;
+    double tot_weight = 0.0;
+    boost::property_map < Graph, boost::edge_weight_t >::type weight = boost::get(boost::edge_weight, *graph);
+    damst::DensityAwareMST::EdgeIter ei, ei_end;
+    for (boost::tie(ei, ei_end) = boost::edges(*g); ei != ei_end; ei++) {
+        num_nodes++;
+        tot_weight += weight[*ei];
+    }
+    return num_nodes / (1000 * tot_weight);
+}
+
+// void DensityAwareMST::updateGraphBasedOnResult() {
+    // EdgeIter eiter, eiter_end;
+    // for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
+        // remove_edge_if();
+        // if (std::find(result.begin(), result.end(), *eiter) == result.end()){
+
+        // }
+    // }
+// }
+
+// std::vector<Graph*> DensityAwareMST::opt(Graph* g){
+    // double best_score = -1.0;
+    // std::vector<Graph*> v;
+    // v.push_back(g);
+    // boost::property_map < Graph, boost::edge_weight_t >::type weight = boost::get(boost::edge_weight, *graph);
+    // for (std::vector < damst::DensityAwareMST::EdgeDesc >::iterator ei = result.begin(); ei != result.end(); ei++) {
+        // std::cout << boost::source(*ei, *graph) << " 🠜🠞 " << boost::target(*ei, *graph) << " with weight: " << weight[*ei] << std::endl;
+    // }
+// }
 
 double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const uint8_t i1, const uint8_t j1, const uint8_t i2, const uint8_t j2) const {
     double r1 = ls->scans[i1].ranges[j1];
@@ -83,13 +112,9 @@ unsigned DensityAwareMST::numberOfEdges() const {
     return edges.size();
 }
 
-unsigned DensityAwareMST::numberOfLsEdges() const {
-    return ls_edges.size();
-}
-
 void DensityAwareMST::printResultTree(){
     boost::property_map < Graph, boost::edge_weight_t >::type weight = boost::get(boost::edge_weight, *graph);
-    for (std::vector < damst::DensityAwareMST::EdgeDesc >::iterator ei = result.begin(); ei != result.end(); ei++){
+    for (std::vector < damst::DensityAwareMST::EdgeDesc >::iterator ei = result.begin(); ei != result.end(); ei++) {
         std::cout << boost::source(*ei, *graph) << " 🠜🠞 " << boost::target(*ei, *graph) << " with weight: " << weight[*ei] << std::endl;
     }
 }

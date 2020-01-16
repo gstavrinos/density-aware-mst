@@ -1,13 +1,21 @@
 #pragma once
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/kruskal_min_spanning_tree.hpp>
+// General
 #include <iostream>
 #include <fstream>
 
+// Boost
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/kruskal_min_spanning_tree.hpp>
+
+// ROS
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <roboskel_msgs/LaserScans.h>
+
+// Pagmo
+#include "damst/problem_def.hpp"
+#include <pagmo/algorithm.hpp>
 
 namespace damst {
 
@@ -16,11 +24,8 @@ class DensityAwareMST{
     public:
         using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>>;
         using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
+        using EdgeIter = boost::graph_traits<Graph>::edge_iterator;
         using Edge = std::pair<unsigned, unsigned>;
-        // For laserscans, we use two "edges" to describe an edge
-        // the first edge (pair) consists of the indices of the first laserscan and point
-        // and the second edge (pair) consists of the indices of the second laserscan and point
-        using LaserScanEdge = std::pair<Edge, Edge>;
         std::vector<Edge> edges;
         std::vector<double> weights;
 
@@ -36,15 +41,17 @@ class DensityAwareMST{
         void visualizeResultTree() const;
         void createDottyGraph() const;
         void printResultTree();
+        // std::vector<Graph*> opt(const Graph*) const
 
     private:
+        pagmo::problem prob;
         Graph* graph;
-        std::vector<LaserScanEdge> ls_edges;
         std::vector<EdgeDesc> result;
 
         double dist(const roboskel_msgs::LaserScans*, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
         unsigned numberOfEdges() const;
-        unsigned numberOfLsEdges() const;
+        double score(const Graph*) const;
+        // void updateGraphBasedOnResult();
 
 };
 

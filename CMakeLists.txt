@@ -21,6 +21,8 @@ set(${LIBRARY_TARGET_NAME}_HDR
     include/damst/damst.hpp
 )
 
+find_package(Pagmo REQUIRED)
+
 find_package(Boost REQUIRED COMPONENTS
     graph
 )
@@ -48,7 +50,7 @@ install(TARGETS ${LIBRARY_TARGET_NAME}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${catkin_LIBRARIES} Pagmo::pagmo) 
 
 add_executable(test_damst1 test/test_damst1.cpp)
 target_link_libraries(test_damst1 ${LIBRARY_TARGET_NAME})
