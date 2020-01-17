@@ -15,10 +15,12 @@ set(LIBRARY_TARGET_NAME ${PROJECT_NAME})
 
 set(${LIBRARY_TARGET_NAME}_SRC
     src/damst.cpp
+    src/problem_def.cpp
 )
 
 set(${LIBRARY_TARGET_NAME}_HDR
     include/damst/damst.hpp
+    include/damst/problem_def.hpp
 )
 
 find_package(Pagmo REQUIRED)
@@ -42,7 +44,8 @@ include_directories(
 )
 
 add_library(${LIBRARY_TARGET_NAME} SHARED
-    src/damst.cpp   
+    src/damst.cpp 
+    src/problem_def.cpp
 )
 
 install(TARGETS ${LIBRARY_TARGET_NAME}

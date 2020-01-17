@@ -1,6 +1,7 @@
 #pragma once
 
 // General
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 
@@ -41,17 +42,16 @@ class DensityAwareMST{
         void visualizeResultTree() const;
         void createDottyGraph() const;
         void printResultTree();
-        // std::vector<Graph*> opt(const Graph*) const
+        std::vector<unsigned> opt() const;
 
     private:
-        pagmo::problem prob;
         Graph* graph;
         std::vector<EdgeDesc> result;
+        size_t rs, num_nodes;
 
         double dist(const roboskel_msgs::LaserScans*, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
         unsigned numberOfEdges() const;
-        double score(const Graph*) const;
-        // void updateGraphBasedOnResult();
+        void updateGraphBasedOnResult();
 
 };
 
