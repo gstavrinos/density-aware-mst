@@ -2,13 +2,13 @@
 
 namespace damst {
 
-    ProblemDefinition::ProblemDefinition(Graph* g, unsigned ss){
+    ProblemDefinition::ProblemDefinition(Graph* g){
         graph = g;
         num_edges = boost::num_edges(*g);
         pagmo::vector_double lb, ub;
-        for (unsigned i=0; i<ss; i++) {
+        for (unsigned i=0; i<num_edges; i++) {
             lb.push_back(-1);
-            ub.push_back(ss);
+            ub.push_back(num_edges-1);
         }
         bounds = std::pair<pagmo::vector_double, pagmo::vector_double>(lb, ub);
     }
@@ -16,7 +16,20 @@ namespace damst {
     pagmo::vector_double ProblemDefinition::fitness(const pagmo::vector_double &v) const {
         // TODO this is a placeholder
         // I have to create subgraphs and pass them to the score function of the damst class
-        return {v[0]*2};
+        Graph gr = Graph(*graph);
+        EdgeIter ei, ei_end, next;
+        boost::tie(ei, ei_end) = boost::edges(*graph);
+        double f = 0.0;
+        for (auto i:v) {
+            // TODO
+            // no checks here, I think it is always safe
+            // but I need to check
+            next = ei;
+            std::advance(next, (int)i);
+            remove_edge(boost::source(*next, *graph), boost::target(*next, *graph), gr);
+        }
+        // TODO use connected_components here
+        return {f};
     }
 
     std::pair<pagmo::vector_double, pagmo::vector_double> ProblemDefinition::get_bounds() const {

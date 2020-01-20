@@ -19,7 +19,7 @@ class ProblemDefinition {
         using EdgeIter = boost::graph_traits<Graph>::edge_iterator;
 
         ProblemDefinition() {}
-        ProblemDefinition(Graph*, unsigned);
+        ProblemDefinition(Graph*);
 
         pagmo::vector_double fitness(const pagmo::vector_double &) const;
         std::pair<pagmo::vector_double, pagmo::vector_double> get_bounds() const;
