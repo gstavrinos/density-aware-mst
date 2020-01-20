@@ -13,7 +13,7 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
     size_t ss = ls.scans.size();
     num_nodes = 0;
     for (unsigned i=0; i<ss; i++) {
-        rs = ls.scans[i].ranges.size(); 
+        size_t rs = ls.scans[i].ranges.size(); 
         for (unsigned j=0; j<rs; j++) {
             if (j+1 < rs) {
                 num_nodes++;
@@ -47,18 +47,18 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
 void DensityAwareMST::updateGraphBasedOnResult() {
     EdgeIter ei, ei_end, next;
     boost::tie(ei, ei_end) = boost::edges(*graph);
-    for (unsigned i=0; i < edges.size(); i++) {
+    // for (unsigned i=0; i < edges.size(); i++) {
         for (next=ei; ei != ei_end; ei=next) {
             next++;
             if (std::find(result.begin(), result.end(), *ei) == result.end()) {
                 remove_edge(*ei, *graph);
             }
         }
-    }
+    // }
 }
 
 std::vector<unsigned> DensityAwareMST::opt() const {
-    pagmo::problem prob(ProblemDefinition(graph, rs));
+    pagmo::problem prob(ProblemDefinition(graph));
     std::vector<unsigned> v;
     return v;
 }
@@ -81,7 +81,7 @@ void DensityAwareMST::createDottyGraph() const {
     << " size=\"5,5\"\n"
     << " ratio=\"filled\"\n"
     << " edge[style=\"bold\"]\n" << " node[shape=\"circle\"]\n";
-    boost::graph_traits<Graph>::edge_iterator eiter, eiter_end;
+    EdgeIter eiter, eiter_end;
     for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
         std::cout << result[0] << std::endl;
         std::cout << *eiter << std::endl;

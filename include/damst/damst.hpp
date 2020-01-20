@@ -47,7 +47,7 @@ class DensityAwareMST{
     private:
         Graph* graph;
         std::vector<EdgeDesc> result;
-        size_t rs, num_nodes;
+        size_t num_nodes;
 
         double dist(const roboskel_msgs::LaserScans*, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
         unsigned numberOfEdges() const;
