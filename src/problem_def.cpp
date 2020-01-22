@@ -14,12 +14,11 @@ namespace damst {
     }
 
     pagmo::vector_double ProblemDefinition::fitness(const pagmo::vector_double &v) const {
-        // TODO this is a placeholder
-        // I have to create subgraphs and pass them to the score function of the damst class
         Graph gr = Graph(*graph);
         EdgeIter ei, ei_end, next;
         boost::tie(ei, ei_end) = boost::edges(*graph);
         double f = 0.0;
+
         for (auto i:v) {
             // TODO
             // no checks here, I think it is always safe
@@ -29,6 +28,17 @@ namespace damst {
             remove_edge(boost::source(*next, *graph), boost::target(*next, *graph), gr);
         }
         // TODO use connected_components here
+        std::vector<int> component (boost::num_vertices (gr));
+        size_t num_components = boost::connected_components(gr, &component[0]);
+
+        for (size_t i=0; i < num_components; i++) {
+            std::cout << i << std::endl;
+            std::cout << component[i] << std::endl;
+            std::cout << "---" << std::endl;
+        }
+
+        std::vector<std::vector<Edge>> sub_graph_edges;
+
         return {f};
     }
 

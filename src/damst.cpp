@@ -10,6 +10,8 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const unsig
 }
 
 std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
+    // TODO the tree apparently is not correctly connected
+    // becauseconnected_components does not return 1! fml!
     size_t ss = ls.scans.size();
     num_nodes = 0;
     for (unsigned i=0; i<ss; i++) {
@@ -40,7 +42,7 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
     }
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
     boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
-    updateGraphBasedOnResult();
+    // updateGraphBasedOnResult();
     return result;
 }
 
@@ -58,9 +60,71 @@ void DensityAwareMST::updateGraphBasedOnResult() {
 }
 
 std::vector<unsigned> DensityAwareMST::opt() const {
-    pagmo::problem prob(ProblemDefinition(graph));
-    std::vector<unsigned> v;
-    return v;
+    // pagmo::problem prob(ProblemDefinition(graph));
+    // pagmo::algorithm algo(pagmo::simulated_annealing());
+    // pagmo::archipelago archi(16u, algo, prob, 20u);
+    // archi.evolve(10);
+    // archi.wait_check();
+    // for (const auto &isl : archi) {
+        // std::cout << isl.get_population().champion_f()[0] << std::endl;
+    // }
+    // pagmo::population pop(prob, *graph);
+    // pop = algo.evolve(pop);
+    // algo.evolve();
+    // std::cout << pop << std::endl;
+
+    std::vector<size_t> v;
+
+    v.push_back(0);
+    v.push_back(1);
+    v.push_back(2);
+    v.push_back(3);
+
+    Graph gr = Graph(*graph);
+    EdgeIter ei, ei_end, next;
+    boost::tie(ei, ei_end) = boost::edges(*graph);
+    double f = 0.0;
+
+    for (auto i:v) {
+        // TODO
+        // no checks here, I think it is always safe
+        // but I need to check
+        next = ei;
+        std::advance(next, (int)i);
+        remove_edge(boost::source(*next, *graph), boost::target(*next, *graph), gr);
+    }
+    // TODO use connected_components here
+    std::vector<int> component (boost::num_vertices (gr));
+    size_t num_components = boost::connected_components(gr, &component[0]);
+
+    std::vector<int> component2 (boost::num_vertices (*graph));
+    size_t num_components2 = boost::connected_components(*graph, &component2[0]);
+    for (size_t i=0; i < num_components; i++) {
+        std::cout << i << std::endl;
+        std::cout << component[i] << std::endl;
+        std::cout << component2[i] << std::endl;
+        std::cout << "---" << std::endl;
+    }
+
+    std::vector<std::vector<Edge>> sub_graph_edges;
+
+    std::cout << num_components << std::endl;
+    std::cout << num_components2 << std::endl;
+
+    std::vector<unsigned> v_;
+    return v_;
+}
+
+double DensityAwareMST::score(const Graph* g) const {
+    unsigned num_nodes = 0;
+    double tot_weight = 0.0;
+    boost::property_map < Graph, boost::edge_weight_t >::type weight = boost::get(boost::edge_weight, *graph);
+    ProblemDefinition::EdgeIter ei, ei_end;
+    for (boost::tie(ei, ei_end) = boost::edges(*g); ei != ei_end; ei++) {
+        num_nodes++;
+        tot_weight += weight[*ei];
+    }
+    return num_nodes / (1000 * tot_weight);
 }
 
 double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const uint8_t i1, const uint8_t j1, const uint8_t i2, const uint8_t j2) const {

@@ -16,7 +16,11 @@
 
 // Pagmo
 #include "damst/problem_def.hpp"
+#include <pagmo/problem.hpp>
 #include <pagmo/algorithm.hpp>
+#include <pagmo/population.hpp>
+#include <pagmo/archipelago.hpp>
+#include <pagmo/algorithms/simulated_annealing.hpp>
 
 namespace damst {
 
@@ -52,6 +56,7 @@ class DensityAwareMST{
         double dist(const roboskel_msgs::LaserScans*, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
         unsigned numberOfEdges() const;
         void updateGraphBasedOnResult();
+        double score(const Graph*) const;
 
 };
 
