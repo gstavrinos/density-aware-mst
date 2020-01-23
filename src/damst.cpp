@@ -10,8 +10,6 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const unsig
 }
 
 std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
-    // TODO the tree apparently is not correctly connected
-    // becauseconnected_components does not return 1! fml!
     size_t ss = ls.scans.size();
     num_nodes = 0;
     for (unsigned i=0; i<ss; i++) {
@@ -32,7 +30,7 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
                     // BUT: (TODO) If I ever encounter crashes,
                     // this is the place to look for first.
                     if (n >= 0 and n < rs) {
-                        num_nodes++;
+                        // num_nodes++;
                         edges.push_back(Edge(i*rs+j, (i+1)*rs+n));
                         weights.push_back(dist(&ls, i, j, i+1, n));
                     }
@@ -42,7 +40,7 @@ std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const robos
     }
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
     boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
-    // updateGraphBasedOnResult();
+    updateGraphBasedOnResult();
     return result;
 }
 
@@ -50,13 +48,13 @@ void DensityAwareMST::updateGraphBasedOnResult() {
     EdgeIter ei, ei_end, next;
     boost::tie(ei, ei_end) = boost::edges(*graph);
     // for (unsigned i=0; i < edges.size(); i++) {
-        for (next=ei; ei != ei_end; ei=next) {
-            next++;
-            if (std::find(result.begin(), result.end(), *ei) == result.end()) {
-                remove_edge(*ei, *graph);
-            }
+    for (next=ei; ei != ei_end; ei=next) {
+        next++;
+        if (std::find(result.begin(), result.end(), *ei) == result.end()) {
+            remove_edge(*ei, *graph);
         }
-    // }
+    }
+// }
 }
 
 std::vector<unsigned> DensityAwareMST::opt() const {
