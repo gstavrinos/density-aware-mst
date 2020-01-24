@@ -14,11 +14,7 @@ void laserCallback(const sensor_msgs::LaserScan& ls) {
     else{
         sub.shutdown();
         damst::DensityAwareMST mst;
-        std::vector<damst::DensityAwareMST::EdgeDesc> result = mst.generateTree(l, 3);
-        mst.printResultTree();
-        mst.opt();
-        // mst.createDottyGraph();
-        // mst.visualizeResultTree();
+        mst.opt(l, 3);
     }
 }
 
