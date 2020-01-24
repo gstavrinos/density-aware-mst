@@ -57,6 +57,7 @@ class DensityAwareMST{
         unsigned numberOfEdges() const;
         void updateGraphBasedOnResult();
         double score(const Graph*) const;
+        double score(const std::vector<double>) const;
 
 };
 
