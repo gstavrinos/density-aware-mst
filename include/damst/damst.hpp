@@ -13,6 +13,8 @@
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
 #include <roboskel_msgs/LaserScans.h>
+#include "roboskel_msgs/ClusteredLaserScans.h"
+#include "roboskel_msgs/LaserScanCluster.h"
 
 // Pagmo
 #include "damst/problem_def.hpp"
@@ -45,7 +47,7 @@ class DensityAwareMST{
         void visualizeResultTree() const;
         void createDottyGraph() const;
         void printResultTree();
-        std::vector<int> opt(const roboskel_msgs::LaserScans&, const unsigned);
+        roboskel_msgs::ClusteredLaserScans opt(const roboskel_msgs::LaserScans&, const unsigned);
 
     private:
         Graph* graph;

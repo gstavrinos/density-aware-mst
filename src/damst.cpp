@@ -62,7 +62,7 @@ void DensityAwareMST::updateGraphBasedOnResult() {
     }
 }
 
-std::vector<int> DensityAwareMST::opt(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
+roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
     generateTree(ls, nn);
 
     // TODO sort edges based on weigths instead of looking for the next biggest each time
@@ -140,10 +140,34 @@ std::vector<int> DensityAwareMST::opt(const roboskel_msgs::LaserScans& ls, const
     for (auto edge:edges_to_remove) {
         remove_edge(edge.first, edge.second, *graph);
     }
-    std::vector<int> component (boost::num_vertices (*graph));
-    size_t num_components = boost::connected_components(*graph, &component[0]);
 
-    return component;
+    // Custom message to store each laserscan's points equivalent cluster
+    // For example, msg.cluster_map[0][1] stores the cluster 
+    // of the second point of the first laserscan.
+    roboskel_msgs::ClusteredLaserScans msg;
+    msg.header= ls.header;
+    msg.scans = ls.scans;
+
+    std::vector<int> component (boost::num_vertices (*graph));
+    msg.num_clusters = boost::connected_components(*graph, &component[0]);
+
+    std::vector<unsigned> tmp;
+    const size_t s = component.size();
+
+    // Basically, break_point is indirectly the size of the laserscans
+    // (assuming that they all have the same size, as they should)
+    const size_t break_point = s/nn;
+
+    for (size_t i=0;i<s;i++) {
+        tmp.push_back(component[i]);
+        if ((i+1) % break_point == 0) {
+            roboskel_msgs::LaserScanCluster tmpmsg;
+            tmpmsg.cluster = tmp;
+            msg.cluster_map.push_back(tmpmsg);
+            tmp.clear();
+        }
+    }
+    return msg;
 }
 
 double DensityAwareMST::score(const std::vector<double> w) const {
@@ -153,7 +177,7 @@ double DensityAwareMST::score(const std::vector<double> w) const {
             tot_weight += i;
         }
         std::cout << "TOTWEIGHT = " << tot_weight << std::endl;
-        return w.size() / (1 * tot_weight);
+        return pow(w.size(),3) / (1 * tot_weight);
     }
     else {
         return 0.0;
