@@ -54,7 +54,7 @@ class DensityAwareMST{
         std::vector<EdgeDesc> result;
         size_t num_nodes;
 
-        std::vector<EdgeDesc> generateTree(const roboskel_msgs::LaserScans&, const unsigned);
+        size_t generateTree(const roboskel_msgs::LaserScans&, const unsigned);
         double dist(const roboskel_msgs::LaserScans*, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
         unsigned numberOfEdges() const;
         void updateGraphBasedOnResult();
