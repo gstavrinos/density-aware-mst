@@ -1,3 +1,4 @@
+#include <cmath>
 #include "ros/ros.h"
 #include "damst/damst.hpp"
 #include "sensor_msgs/LaserScan.h"
@@ -8,32 +9,51 @@ roboskel_msgs::LaserScans l;
 ros::Subscriber sub;
 ros::Publisher pub;
 
+
 void laserCallback(const sensor_msgs::LaserScan& ls) {
     if (l.scans.size() < 1) {
         l.scans.push_back(ls);
     }
-    else{
+    else {
+        l.scans.erase(l.scans.begin());
         l.scans.push_back(ls);
+        l.header = ls.header;
         damst::DensityAwareMST mst;
-        roboskel_msgs::ClusteredLaserScans cls;
-        cls = mst.opt(l, 3);
-        sensor_msgs::LaserScan s = ls;
-        // s.header = ls.header;
-        // s.ranges = ls.ranges;
-        s.intensities.clear();
-        for (auto i:cls.cluster_map[0].cluster) {
-            s.intensities.push_back(i);
+        roboskel_msgs::ClusteredLaserScans s;
+        s = mst.opt(l, 3);
+        roboskel_msgs::LaserScans msg(l);
+        int prev = -1;
+        for (size_t i=0;i<s.scans.size();i++) {
+            msg.scans[i].intensities.clear();
+            // std::cout << "=============" << std::endl;
+            // std::cout << "=============" << std::endl;
+            // std::cout << "=============" << std::endl;
+            for (size_t j=0;j<s.scans[i].ranges.size();j++) {
+                // if (prev < s.cluster_map[i].cluster[j]) {
+                    // std::cout << i << "," << j << std::endl;
+                    // std::cout << s.cluster_map[i].cluster[j] << std::endl;
+                    prev = s.cluster_map[i].cluster[j];
+                // }
+                msg.scans[i].intensities.push_back(s.cluster_map[i].cluster[j]);
+            }
+            // std::cout << "=============" << std::endl;
+            // std::cout << "=============" << std::endl;
+            // std::cout << "=============" << std::endl;
         }
-        pub.publish(s);
+        sensor_msgs::LaserScan test;
+        // Just get the first as a demo
+        test = msg.scans[0];
+        pub.publish(test);
         l.scans.clear();
     }
+
 }
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "test_damst2");
     ros::NodeHandle n;
-    sub = n.subscribe("/scan", 1, laserCallback);
-    pub = n.advertise<sensor_msgs::LaserScan>("testtt", 1);
+    sub = n.subscribe("/scan_filtered", 1, laserCallback);
+    pub = n.advertise<sensor_msgs::LaserScan>("/damst_test2/scan", 1);
     ros::spin();
     return 0;
 }
