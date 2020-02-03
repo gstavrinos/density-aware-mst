@@ -15,6 +15,8 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
     for (unsigned i=0; i<ss; i++) {
         const size_t rs = ls.scans[i].ranges.size(); 
         for (unsigned j=0; j<rs; j++) {
+            // TODO since I am using filters, I need to throw away nan values
+            // which will exclude points from being a vertex
             if (j+1 < rs) {
                 num_nodes++;
                 edges.push_back(Edge(i*rs+j, i*rs+j+1));
@@ -38,6 +40,7 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
             }
         }
     }
+
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
     boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
     updateGraphBasedOnResult();
@@ -47,18 +50,25 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
 void DensityAwareMST::updateGraphBasedOnResult() {
     EdgeIter ei, ei_end, next;
     boost::tie(ei, ei_end) = boost::edges(*graph);
+    std::vector<Edge> e_;
     for (next=ei; ei != ei_end; ei=next) {
         next++;
         if (std::find(result.begin(), result.end(), *ei) == result.end()) {
             for (size_t i=0; i < edges.size(); i++) {
-                if( edges[i].first == boost::source(*next, *graph) and edges[i].second == boost::target(*next, *graph)) {
+                // if(edges[i].first == *(int*)boost::source(*ei, *graph) and edges[i].second == *(int*)boost::target(*ei, *graph)) {
+                if(edges[i].first == boost::source(*ei, *graph) and edges[i].second == boost::target(*ei, *graph)) {
                     edges.erase(edges.begin()+i);
                     weights.erase(weights.begin()+i);
+                    // e_.push_back(Edge(*(int*)boost::source(*ei, *graph), *(int*)boost::target(*ei, *graph)));
+                    e_.push_back(Edge(boost::source(*ei, *graph), boost::target(*ei, *graph)));
                     break;
                 }
             }
-            remove_edge(*ei, *graph);
+            // remove_edge(*ei, *graph);
         }
+    }
+    for (auto e:e_) {
+        remove_edge(e.first, e.second, *graph);
     }
 }
 
@@ -76,7 +86,10 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
 
     double best_score = 0.0;
 
-    while (optimizing) {
+    int cnt = 0;
+
+    while (optimizing and cnt < 5) {
+        cnt++;
         double maxw = 0;
         size_t lmi = 0;
         Graph *gr = new Graph(*graph);
@@ -87,6 +100,9 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
                 lmi = i;
             }
         }
+        std::cout <<"maxw:";
+        std::cout << maxw << std::endl;
+        // std::cin>>maxw;
         // std::cout << "MAXW = " << maxw << std::endl;
         // std::cout << "LAST_MAXW = " << last_maxw << std::endl;
         if (thinking_of_stopping and maxw < last_maxw) {
@@ -180,7 +196,7 @@ double DensityAwareMST::score(const std::vector<double> w) const {
             tot_weight += i;
         }
         std::cout << "TOTWEIGHT = " << tot_weight << std::endl;
-        return pow(w.size(),3) / (1 * tot_weight);
+        return pow(w.size(),1) / (1 * tot_weight);
     }
     else {
         return 0.0;
@@ -191,7 +207,7 @@ double DensityAwareMST::score(const Graph* g) const {
     unsigned num_nodes = 0;
     double tot_weight = 0.0;
     boost::property_map < Graph, boost::edge_weight_t >::type weight = boost::get(boost::edge_weight, *graph);
-    ProblemDefinition::EdgeIter ei, ei_end;
+    EdgeIter ei, ei_end;
     for (boost::tie(ei, ei_end) = boost::edges(*g); ei != ei_end; ei++) {
         num_nodes++;
         tot_weight += weight[*ei];
@@ -199,7 +215,7 @@ double DensityAwareMST::score(const Graph* g) const {
     return num_nodes / (1000 * tot_weight);
 }
 
-double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const uint8_t i1, const uint8_t j1, const uint8_t i2, const uint8_t j2) const {
+double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const size_t i1, const size_t j1, const size_t i2, const size_t j2) const {
     double r1 = ls->scans[i1].ranges[j1];
     double r2 = ls->scans[i2].ranges[j2];
     double theta1 = ls->scans[i1].angle_min + j1 * ls->scans[i1].angle_increment;
