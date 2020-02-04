@@ -7,15 +7,15 @@ scan_filter_chain:
     upper_threshold: 8.0
     lower_replacement_value: -.inf
     upper_replacement_value: .inf
-- name: shadows
-  type: laser_filters/ScanShadowsFilter
-  params:
-    min_angle: 10
-    max_angle: 170
-    neighbors: 20
-    window: 1
-- name: angle
-  type: laser_filters/LaserScanAngularBoundsFilter
-  params:
-    lower_angle: -1.57
-    upper_angle: 1.57
+# - name: shadows
+  # type: laser_filters/ScanShadowsFilter
+  # params:
+    # min_angle: 10
+    # max_angle: 170
+    # neighbors: 20
+    # window: 1
+# - name: angle
+  # type: laser_filters/LaserScanAngularBoundsFilter
+  # params:
+    # lower_angle: -1.57
+    # upper_angle: 1.57
