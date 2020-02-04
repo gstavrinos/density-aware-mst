@@ -7,6 +7,7 @@
 
 // Boost
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/connected_components.hpp>
 #include <boost/graph/kruskal_min_spanning_tree.hpp>
 
 // ROS
@@ -17,12 +18,12 @@
 #include "roboskel_msgs/LaserScanCluster.h"
 
 // Pagmo
-#include "damst/problem_def.hpp"
-#include <pagmo/problem.hpp>
-#include <pagmo/algorithm.hpp>
-#include <pagmo/population.hpp>
-#include <pagmo/archipelago.hpp>
-#include <pagmo/algorithms/simulated_annealing.hpp>
+// #include "damst/problem_def.hpp"
+// #include <pagmo/problem.hpp>
+// #include <pagmo/algorithm.hpp>
+// #include <pagmo/population.hpp>
+// #include <pagmo/archipelago.hpp>
+// #include <pagmo/algorithms/simulated_annealing.hpp>
 
 namespace damst {
 
@@ -30,6 +31,7 @@ class DensityAwareMST{
 
     public:
         using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>>;
+        // using Graph = boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>>;
         using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
         using EdgeIter = boost::graph_traits<Graph>::edge_iterator;
         using Edge = std::pair<unsigned, unsigned>;
@@ -53,9 +55,10 @@ class DensityAwareMST{
         Graph* graph;
         std::vector<EdgeDesc> result;
         size_t num_nodes;
+        std::vector<size_t> excluded_points;
 
         size_t generateTree(const roboskel_msgs::LaserScans&, const unsigned);
-        double dist(const roboskel_msgs::LaserScans*, const uint8_t, const uint8_t, const uint8_t, const uint8_t) const;
+        double dist(const roboskel_msgs::LaserScans*, const size_t, const size_t, const size_t, const size_t) const;
         unsigned numberOfEdges() const;
         void updateGraphBasedOnResult();
         double score(const Graph*) const;
