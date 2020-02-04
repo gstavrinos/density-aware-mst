@@ -15,13 +15,30 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
     for (unsigned i=0; i<ss; i++) {
         const size_t rs = ls.scans[i].ranges.size(); 
         for (unsigned j=0; j<rs; j++) {
-            // TODO since I am using filters, I need to throw away nan values
-            // which will exclude points from being a vertex
-            if (j+1 < rs) {
-                num_nodes++;
-                edges.push_back(Edge(i*rs+j, i*rs+j+1));
-                weights.push_back(dist(&ls, i, j, i, j+1));
+            // I am now connecting the nearest not-NaN value
+            // but there are still cases where this is not enough
+            // s1.png in the screenshots folder
+            // shows a case where maybe a connection from
+            // all vertices to all vertices would solve this. (TODO)
+            // (connecting with the n next could still be not enough)
+            int k = j+1;
+            for (size_t k=j+1;k<rs;k++){
+                if (std::isfinite(ls.scans[i].ranges[k])) {
+                    num_nodes++;
+                    edges.push_back(Edge(i*rs+j, i*rs+k));
+                    weights.push_back(dist(&ls, i, j, i, k));
+                    break;
+                }
             }
+            std::cout << edges[edges.size()-1].first << std::endl;
+            std::cout << edges[edges.size()-1].second<< std::endl;
+            std::cout << "---" << std::endl;
+            // if (j+1 < rs) {
+                // num_nodes++;
+                // edges.push_back(Edge(i*rs+j, i*rs+j+1));
+                // weights.push_back(dist(&ls, i, j, i, j+1));
+                // std::cout << weights[weights.size()-1] << std::endl;
+            // }
             if (i+1 < ss) {
                 for (unsigned n=j-nn; n<=j+nn; n++) {
                     // I am checking with the current
@@ -31,7 +48,7 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
                     // are generated from the same driver.
                     // BUT: (TODO) If I ever encounter crashes,
                     // this is the place to look for first.
-                    if (n >= 0 and n < rs) {
+                    if (n >= 0 and n < rs and std::isfinite(ls.scans[i+1].ranges[n])) {
                         // num_nodes++;
                         edges.push_back(Edge(i*rs+j, (i+1)*rs+n));
                         weights.push_back(dist(&ls, i, j, i+1, n));
@@ -39,6 +56,7 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
                 }
             }
         }
+        // std::cin>>num_nodes;
     }
 
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
@@ -88,7 +106,7 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
 
     int cnt = 0;
 
-    while (optimizing and cnt < 5) {
+    while (optimizing and cnt < 3) {
         cnt++;
         double maxw = 0;
         size_t lmi = 0;
@@ -173,9 +191,10 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
     std::vector<unsigned> tmp;
     const size_t s = component.size();
 
-    // Basically, break_point is indirectly the size of the laserscans
-    // (assuming that they all have the same size, as they should)
-    const size_t break_point = s/nn;
+    const size_t all_points = ls.scans.size()*ls.scans[0].ranges.size();
+    // break_point is the size of the laserscans
+    // assuming that they all have the same size, as they should
+    const size_t break_point = s/nn;//ls.scans[0].ranges.size();
 
     for (size_t i=0;i<s;i++) {
         tmp.push_back(component[i]);
@@ -190,13 +209,13 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
 }
 
 double DensityAwareMST::score(const std::vector<double> w) const {
-    if (w.size() > 0) {
-        double tot_weight = 0.0;
-        for (auto i:w) {
-            tot_weight += i;
-        }
-        std::cout << "TOTWEIGHT = " << tot_weight << std::endl;
-        return pow(w.size(),1) / (1 * tot_weight);
+    double tot_weight = 0.0;
+    for (auto i:w) {
+        tot_weight += i;
+    }
+    std::cout << "TOTWEIGHT = " << tot_weight << std::endl;
+    if (tot_weight > 0) { 
+        return pow(w.size(),2) / (1 * tot_weight);
     }
     else {
         return 0.0;
@@ -218,9 +237,14 @@ double DensityAwareMST::score(const Graph* g) const {
 double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const size_t i1, const size_t j1, const size_t i2, const size_t j2) const {
     double r1 = ls->scans[i1].ranges[j1];
     double r2 = ls->scans[i2].ranges[j2];
-    double theta1 = ls->scans[i1].angle_min + j1 * ls->scans[i1].angle_increment;
-    double theta2 = ls->scans[i2].angle_min + j2 * ls->scans[i2].angle_increment;
-    return sqrt(r1*r1 + r2*r2 - 2*r1*r2*(cos(theta1-theta2)));
+    if (std::isfinite(r1) and std::isfinite(r2)) {
+        double theta1 = ls->scans[i1].angle_min + j1 * ls->scans[i1].angle_increment;
+        double theta2 = ls->scans[i2].angle_min + j2 * ls->scans[i2].angle_increment;
+        return sqrt(r1*r1 + r2*r2 - 2*r1*r2*(cos(theta1-theta2)));
+    }
+    else {
+        return 0;
+    }
 }
 
 // Seeing dots instead of edge labels?
