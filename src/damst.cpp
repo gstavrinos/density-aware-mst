@@ -21,18 +21,27 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
             // shows a case where maybe a connection from
             // all vertices to all vertices would solve this. (TODO)
             // (connecting with the n next could still be not enough)
-            int k = j+1;
-            for (size_t k=j+1;k<rs;k++){
+
+            for (size_t k=j+1;k<rs;k++) {
                 if (std::isfinite(ls.scans[i].ranges[k])) {
-                    num_nodes++;
                     edges.push_back(Edge(i*rs+j, i*rs+k));
                     weights.push_back(dist(&ls, i, j, i, k));
-                    break;
                 }
             }
-            std::cout << edges[edges.size()-1].first << std::endl;
-            std::cout << edges[edges.size()-1].second<< std::endl;
-            std::cout << "---" << std::endl;
+            num_nodes++;
+            // int k = j+1;
+            // for (size_t k=j+1;k<rs;k++){
+                // if (std::isfinite(ls.scans[i].ranges[k])) {
+                    // num_nodes++;
+                    // edges.push_back(Edge(i*rs+j, i*rs+k));
+                    // weights.push_back(dist(&ls, i, j, i, k));
+                    // break;
+                // }
+            // }
+
+            // std::cout << edges[edges.size()-1].first << std::endl;
+            // std::cout << edges[edges.size()-1].second<< std::endl;
+            // std::cout << "---" << std::endl;
             // if (j+1 < rs) {
                 // num_nodes++;
                 // edges.push_back(Edge(i*rs+j, i*rs+j+1));
@@ -56,38 +65,35 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
                 }
             }
         }
-        // std::cin>>num_nodes;
     }
 
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
     boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
-    updateGraphBasedOnResult();
+    updateGraphBasedOnResult(ls);
     return ss;
 }
 
-void DensityAwareMST::updateGraphBasedOnResult() {
-    EdgeIter ei, ei_end, next;
-    boost::tie(ei, ei_end) = boost::edges(*graph);
-    std::vector<Edge> e_;
-    for (next=ei; ei != ei_end; ei=next) {
-        next++;
-        if (std::find(result.begin(), result.end(), *ei) == result.end()) {
-            for (size_t i=0; i < edges.size(); i++) {
-                // if(edges[i].first == *(int*)boost::source(*ei, *graph) and edges[i].second == *(int*)boost::target(*ei, *graph)) {
-                if(edges[i].first == boost::source(*ei, *graph) and edges[i].second == boost::target(*ei, *graph)) {
-                    edges.erase(edges.begin()+i);
-                    weights.erase(weights.begin()+i);
-                    // e_.push_back(Edge(*(int*)boost::source(*ei, *graph), *(int*)boost::target(*ei, *graph)));
-                    e_.push_back(Edge(boost::source(*ei, *graph), boost::target(*ei, *graph)));
-                    break;
-                }
-            }
-            // remove_edge(*ei, *graph);
-        }
+void DensityAwareMST::updateGraphBasedOnResult(const roboskel_msgs::LaserScans& ls) {
+    edges.clear();
+    weights.clear();
+    for (size_t i=0;i<result.size();i++) {
+        int s = boost::source(result[i], *graph);
+        int t = boost::target(result[i], *graph);
+        edges.push_back(Edge(s, t));
+        int laserscan_s = s/ls.scans[0].ranges.size();
+        int laserscan_t = t/ls.scans[0].ranges.size();
+        int i_s = s%ls.scans[0].ranges.size();
+        int i_t = t%ls.scans[0].ranges.size();
+        std::cout << boost::source(result[i], *graph) << std::endl;
+        std::cout << boost::target(result[i], *graph) << std::endl;
+        std::cout << laserscan_s << std::endl;
+        std::cout << laserscan_t << std::endl;
+        std::cout << i_s << std::endl;
+        std::cout << i_t << std::endl;
+        std::cout << "-----" << std::endl;
+        weights.push_back(dist(&ls, laserscan_s, i_s, laserscan_t, i_t));
     }
-    for (auto e:e_) {
-        remove_edge(e.first, e.second, *graph);
-    }
+    graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
 }
 
 roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::LaserScans& ls, const unsigned n) {
