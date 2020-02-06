@@ -22,11 +22,17 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
             // all vertices to all vertices would solve this. (TODO)
             // (connecting with the n next could still be not enough)
 
-            for (size_t k=j+1;k<rs;k++) {
-                if (std::isfinite(ls.scans[i].ranges[k])) {
-                    edges.push_back(Edge(i*rs+j, i*rs+k));
-                    weights.push_back(dist(&ls, i, j, i, k));
+            if (std::isfinite(ls.scans[i].ranges[j])) {
+                for (size_t k=j+1;k<rs;k++) {
+                    if (std::isfinite(ls.scans[i].ranges[k])) {
+                        edges.push_back(Edge(i*rs+j, i*rs+k));
+                        weights.push_back(dist(&ls, i, j, i, k));
+                    }
                 }
+            }
+            else{
+            std::cout << ls.scans[i].ranges[j];
+            std::cin >> num_nodes;
             }
             num_nodes++;
             // int k = j+1;
@@ -91,13 +97,14 @@ void DensityAwareMST::updateGraphBasedOnResult(const roboskel_msgs::LaserScans& 
         std::cout << i_s << std::endl;
         std::cout << i_t << std::endl;
         std::cout << "-----" << std::endl;
+        // TODO optimize this by accessing it through the graph instead of calculating it again
         weights.push_back(dist(&ls, laserscan_s, i_s, laserscan_t, i_t));
     }
     graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
 }
 
 roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::LaserScans& ls, const unsigned n) {
-    size_t nn = generateTree(ls, n);
+    generateTree(ls, n);
 
     // TODO sort edges based on weigths instead of looking for the next biggest each time
     bool optimizing = true;
@@ -200,7 +207,7 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
     const size_t all_points = ls.scans.size()*ls.scans[0].ranges.size();
     // break_point is the size of the laserscans
     // assuming that they all have the same size, as they should
-    const size_t break_point = s/nn;//ls.scans[0].ranges.size();
+    const size_t break_point = s/ls.scans.size();//ls.scans[0].ranges.size();
 
     for (size_t i=0;i<s;i++) {
         tmp.push_back(component[i]);
@@ -249,7 +256,7 @@ double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const size_t i
         return sqrt(r1*r1 + r2*r2 - 2*r1*r2*(cos(theta1-theta2)));
     }
     else {
-        return 0;
+        return 0.01;
     }
 }
 
