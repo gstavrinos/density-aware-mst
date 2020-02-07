@@ -15,15 +15,11 @@ set(LIBRARY_TARGET_NAME ${PROJECT_NAME})
 
 set(${LIBRARY_TARGET_NAME}_SRC
     src/damst.cpp
-    src/problem_def.cpp
 )
 
 set(${LIBRARY_TARGET_NAME}_HDR
     include/damst/damst.hpp
-    include/damst/problem_def.hpp
 )
-
-find_package(Pagmo REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS
     graph
@@ -45,7 +41,6 @@ include_directories(
 
 add_library(${LIBRARY_TARGET_NAME} SHARED
     src/damst.cpp 
-    src/problem_def.cpp
 )
 
 install(TARGETS ${LIBRARY_TARGET_NAME}
@@ -53,10 +48,7 @@ install(TARGETS ${LIBRARY_TARGET_NAME}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${catkin_LIBRARIES} Pagmo::pagmo) 
-
-add_executable(test_damst1 test/test_damst1.cpp)
-target_link_libraries(test_damst1 ${LIBRARY_TARGET_NAME})
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${catkin_LIBRARIES}) 
 
 add_executable(test_damst2 test/test_damst2.cpp)
 target_link_libraries(test_damst2 ${LIBRARY_TARGET_NAME} ${catkin_LIBRARIES})

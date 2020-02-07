@@ -17,21 +17,12 @@
 #include "roboskel_msgs/ClusteredLaserScans.h"
 #include "roboskel_msgs/LaserScanCluster.h"
 
-// Pagmo
-// #include "damst/problem_def.hpp"
-// #include <pagmo/problem.hpp>
-// #include <pagmo/algorithm.hpp>
-// #include <pagmo/population.hpp>
-// #include <pagmo/archipelago.hpp>
-// #include <pagmo/algorithms/simulated_annealing.hpp>
-
 namespace damst {
 
 class DensityAwareMST{
 
     public:
         using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>>;
-        // using Graph = boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>>;
         using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
         using EdgeIter = boost::graph_traits<Graph>::edge_iterator;
         using Edge = std::pair<unsigned, unsigned>;
@@ -39,17 +30,13 @@ class DensityAwareMST{
         std::vector<double> weights;
 
         DensityAwareMST(){}
-        // TODO a proper constructor (maybe)
-        // DensityAwareMST(std::vector, std::vector, unsigned int);
 
         ~DensityAwareMST(){}
 
-        std::vector<EdgeDesc> generateTree(const unsigned);
-        const std::vector<EdgeDesc>& getResult() const;
+        roboskel_msgs::ClusteredLaserScans opt(const roboskel_msgs::LaserScans&, const unsigned);
         void visualizeResultTree() const;
         void createDottyGraph() const;
         void printResultTree();
-        roboskel_msgs::ClusteredLaserScans opt(const roboskel_msgs::LaserScans&, const unsigned);
 
     private:
         Graph* graph;
@@ -60,7 +47,6 @@ class DensityAwareMST{
         double dist(const roboskel_msgs::LaserScans*, const size_t, const size_t, const size_t, const size_t) const;
         unsigned numberOfEdges() const;
         void updateGraphBasedOnResult(const roboskel_msgs::LaserScans& ls);
-        double score(const Graph*) const;
         double score(const std::vector<double>) const;
 
 };

@@ -2,13 +2,6 @@
 
 namespace damst {
 
-std::vector<DensityAwareMST::EdgeDesc> DensityAwareMST::generateTree(const unsigned num_nodes) {
-    std::cout << &edges[0] << std::endl;
-    graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
-    boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
-    return result;
-}
-
 size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
     const size_t ss = ls.scans.size();
     num_nodes = 0;
@@ -235,18 +228,6 @@ double DensityAwareMST::score(const std::vector<double> w) const {
     }
 }
 
-double DensityAwareMST::score(const Graph* g) const {
-    unsigned num_nodes = 0;
-    double tot_weight = 0.0;
-    boost::property_map < Graph, boost::edge_weight_t >::type weight = boost::get(boost::edge_weight, *graph);
-    EdgeIter ei, ei_end;
-    for (boost::tie(ei, ei_end) = boost::edges(*g); ei != ei_end; ei++) {
-        num_nodes++;
-        tot_weight += weight[*ei];
-    }
-    return num_nodes / (1000 * tot_weight);
-}
-
 double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const size_t i1, const size_t j1, const size_t i2, const size_t j2) const {
     double r1 = ls->scans[i1].ranges[j1];
     double r2 = ls->scans[i2].ranges[j2];
@@ -294,10 +275,6 @@ void DensityAwareMST::printResultTree(){
     for (std::vector < damst::DensityAwareMST::EdgeDesc >::iterator ei = result.begin(); ei != result.end(); ei++) {
         std::cout << boost::source(*ei, *graph) << " 🠜🠞 " << boost::target(*ei, *graph) << " with weight: " << weight[*ei] << std::endl;
     }
-}
-
-const std::vector<DensityAwareMST::EdgeDesc>& DensityAwareMST::getResult() const {
-    return result;
 }
 
 void DensityAwareMST::visualizeResultTree() const {
