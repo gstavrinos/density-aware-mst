@@ -8,13 +8,6 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
     for (unsigned i=0; i<ss; i++) {
         const size_t rs = ls.scans[i].ranges.size(); 
         for (unsigned j=0; j<rs; j++) {
-            // I am now connecting the nearest not-NaN value
-            // but there are still cases where this is not enough
-            // s1.png in the screenshots folder
-            // shows a case where maybe a connection from
-            // all vertices to all vertices would solve this. (TODO)
-            // (connecting with the n next could still be not enough)
-
             if (std::isfinite(ls.scans[i].ranges[j])) {
                 for (size_t k=j+1;k<rs;k++) {
                     if (std::isfinite(ls.scans[i].ranges[k])) {
@@ -28,25 +21,7 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
             std::cin >> num_nodes;
             }
             num_nodes++;
-            // int k = j+1;
-            // for (size_t k=j+1;k<rs;k++){
-                // if (std::isfinite(ls.scans[i].ranges[k])) {
-                    // num_nodes++;
-                    // edges.push_back(Edge(i*rs+j, i*rs+k));
-                    // weights.push_back(dist(&ls, i, j, i, k));
-                    // break;
-                // }
-            // }
 
-            // std::cout << edges[edges.size()-1].first << std::endl;
-            // std::cout << edges[edges.size()-1].second<< std::endl;
-            // std::cout << "---" << std::endl;
-            // if (j+1 < rs) {
-                // num_nodes++;
-                // edges.push_back(Edge(i*rs+j, i*rs+j+1));
-                // weights.push_back(dist(&ls, i, j, i, j+1));
-                // std::cout << weights[weights.size()-1] << std::endl;
-            // }
             if (i+1 < ss) {
                 for (unsigned n=j-nn; n<=j+nn; n++) {
                     // I am checking with the current
@@ -57,7 +32,6 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
                     // BUT: (TODO) If I ever encounter crashes,
                     // this is the place to look for first.
                     if (n >= 0 and n < rs and std::isfinite(ls.scans[i+1].ranges[n])) {
-                        // num_nodes++;
                         edges.push_back(Edge(i*rs+j, (i+1)*rs+n));
                         weights.push_back(dist(&ls, i, j, i+1, n));
                     }
@@ -126,9 +100,7 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
         }
         std::cout <<"maxw:";
         std::cout << maxw << std::endl;
-        // std::cin>>maxw;
-        // std::cout << "MAXW = " << maxw << std::endl;
-        // std::cout << "LAST_MAXW = " << last_maxw << std::endl;
+
         if (thinking_of_stopping and maxw < last_maxw) {
             optimizing = false;
             continue;
@@ -160,7 +132,6 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
         std::cout << "NumComponents = " << num_components << std::endl;
         if (s >= best_score) {
             num_no_improv = s==best_score ? num_no_improv+1 : 0;
-            // std::cout << "num_no_improv = " << num_no_improv << std::endl;
             if (num_no_improv >= max_no_improv) {
                 optimizing = false;
             }
@@ -200,7 +171,7 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
     const size_t all_points = ls.scans.size()*ls.scans[0].ranges.size();
     // break_point is the size of the laserscans
     // assuming that they all have the same size, as they should
-    const size_t break_point = s/ls.scans.size();//ls.scans[0].ranges.size();
+    const size_t break_point = s/ls.scans.size();
 
     for (size_t i=0;i<s;i++) {
         tmp.push_back(component[i]);
