@@ -12,7 +12,7 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
                 for (size_t k=j+1;k<rs;k++) {
                     if (std::isfinite(ls.scans[i].ranges[k])) {
                         edges.push_back(Edge(i*rs+j, i*rs+k));
-                        weights.push_back(dist(&ls, i, j, i, k));
+                        weights.push_back(dist(ls, i, j, i, k));
                     }
                 }
             }
@@ -33,14 +33,14 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
                     // this is the place to look for first.
                     if (n >= 0 and n < rs and std::isfinite(ls.scans[i+1].ranges[n])) {
                         edges.push_back(Edge(i*rs+j, (i+1)*rs+n));
-                        weights.push_back(dist(&ls, i, j, i+1, n));
+                        weights.push_back(dist(ls, i, j, i+1, n));
                     }
                 }
             }
         }
     }
 
-    graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
+    graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
     boost::kruskal_minimum_spanning_tree(*graph, std::back_inserter(result));
     updateGraphBasedOnResult(ls);
     return ss;
@@ -65,9 +65,9 @@ void DensityAwareMST::updateGraphBasedOnResult(const roboskel_msgs::LaserScans& 
         std::cout << i_t << std::endl;
         std::cout << "-----" << std::endl;
         // TODO optimize this by accessing it through the graph instead of calculating it again
-        weights.push_back(dist(&ls, laserscan_s, i_s, laserscan_t, i_t));
+        weights.push_back(dist(ls, laserscan_s, i_s, laserscan_t, i_t));
     }
-    graph = new Graph(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
+    graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
 }
 
 roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::LaserScans& ls, const unsigned n) {
@@ -86,11 +86,11 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
 
     int cnt = 0;
 
-    while (optimizing and cnt < 3) {
+    while (optimizing or cnt < 3) {
         cnt++;
         double maxw = 0;
         size_t lmi = 0;
-        Graph *gr = new Graph(*graph);
+        std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
         // Find biggest (in length) edge
         for (size_t i=0;i<edges.size();i++){
             if (weights[i] >= maxw){
@@ -148,7 +148,7 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
         weights.erase(weights.begin()+lmi);
     }
 
-    Graph *gr = new Graph(*graph);
+    std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
     for (auto edge:edges_to_remove) {
         remove_edge(edge.first, edge.second, *gr);
     }
@@ -199,12 +199,12 @@ double DensityAwareMST::score(const std::vector<double> w) const {
     }
 }
 
-double DensityAwareMST::dist(const roboskel_msgs::LaserScans* ls, const size_t i1, const size_t j1, const size_t i2, const size_t j2) const {
-    double r1 = ls->scans[i1].ranges[j1];
-    double r2 = ls->scans[i2].ranges[j2];
+double DensityAwareMST::dist(const roboskel_msgs::LaserScans& ls, const size_t i1, const size_t j1, const size_t i2, const size_t j2) const {
+    double r1 = ls.scans[i1].ranges[j1];
+    double r2 = ls.scans[i2].ranges[j2];
     if (std::isfinite(r1) and std::isfinite(r2)) {
-        double theta1 = ls->scans[i1].angle_min + j1 * ls->scans[i1].angle_increment;
-        double theta2 = ls->scans[i2].angle_min + j2 * ls->scans[i2].angle_increment;
+        double theta1 = ls.scans[i1].angle_min + j1 * ls.scans[i1].angle_increment;
+        double theta2 = ls.scans[i2].angle_min + j2 * ls.scans[i2].angle_increment;
         return sqrt(r1*r1 + r2*r2 - 2*r1*r2*(cos(theta1-theta2)));
     }
     else {
