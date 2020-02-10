@@ -22,23 +22,11 @@ void laserCallback(const sensor_msgs::LaserScan& ls) {
         roboskel_msgs::ClusteredLaserScans s;
         s = mst.opt(l, 3);
         roboskel_msgs::LaserScans msg(l);
-        int prev = -1;
         for (size_t i=0;i<s.scans.size();i++) {
             msg.scans[i].intensities.clear();
-            // std::cout << "=============" << std::endl;
-            // std::cout << "=============" << std::endl;
-            // std::cout << "=============" << std::endl;
             for (size_t j=0;j<s.scans[i].ranges.size();j++) {
-                // if (prev < s.cluster_map[i].cluster[j]) {
-                    // std::cout << i << "," << j << std::endl;
-                    // std::cout << s.cluster_map[i].cluster[j] << std::endl;
-                    prev = s.cluster_map[i].cluster[j];
-                // }
                 msg.scans[i].intensities.push_back(s.cluster_map[i].cluster[j]);
             }
-            // std::cout << "=============" << std::endl;
-            // std::cout << "=============" << std::endl;
-            // std::cout << "=============" << std::endl;
         }
         sensor_msgs::LaserScan test;
         // Just get the first as a demo
