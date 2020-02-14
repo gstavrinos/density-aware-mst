@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include <string>
 
 // Boost
 #include <boost/graph/adjacency_list.hpp>
@@ -35,6 +36,7 @@ class DensityAwareMST{
         ~DensityAwareMST(){}
 
         roboskel_msgs::ClusteredLaserScans opt(const roboskel_msgs::LaserScans&, const unsigned);
+        std::pair<std::vector<int>, int> opt(const std::vector<std::pair<double, double>>);
         void visualizeResultTree() const;
         void createDottyGraph() const;
         void printResultTree();
@@ -45,9 +47,12 @@ class DensityAwareMST{
         size_t num_nodes;
 
         size_t generateTree(const roboskel_msgs::LaserScans&, const unsigned);
+        void generateTree(const std::vector<std::pair<double, double>>);
         double dist(const roboskel_msgs::LaserScans&, const size_t, const size_t, const size_t, const size_t) const;
+        double dist(const std::pair<double, double>, const std::pair<double, double>) const;
         unsigned numberOfEdges() const;
         void updateGraphBasedOnResult(const roboskel_msgs::LaserScans& ls);
+        void updateGraphBasedOnResult(const std::vector<std::pair<double, double>>);
         double score(const std::vector<double>) const;
 
 };
