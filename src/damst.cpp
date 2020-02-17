@@ -70,7 +70,7 @@ void DensityAwareMST::updateGraphBasedOnResult(const std::vector<std::pair<doubl
         // TODO optimize this by accessing it through the graph instead of calculating it again
         weights.push_back(dist(points[s], points[t]));
     }
-    graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], num_nodes);
+    graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], points.size());
 }
 
 void DensityAwareMST::updateGraphBasedOnResult(const roboskel_msgs::LaserScans& ls) {
