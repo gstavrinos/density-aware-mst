@@ -1,6 +1,6 @@
 #include <chrono>
 #include "damst/damst.hpp"
-
+#include "matplotlibcpp.h"
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -40,14 +40,34 @@ int main(int argc, char **argv) {
 
     const size_t s = component.size();
 
+    std::vector<double> x,y;
+    std::vector<std::string> c;
+
     std::cout << "Saving results..." << std::endl;
     std::ofstream of;
     of.open(argv[2]);
     // First line is the number of clusters
     of << num_clusters << std::endl;
+    std::string colours[8] = {"b.", "g.", "r.", "c.", "m.", "y.", "k.", "w."};
     for (size_t i=0;i<s;i++) {
         of << points[i].first << "," << points[i].second << "," << component[i] << std::endl;
+        x.push_back(points[i].first);
+        y.push_back(points[i].second);
+        c.push_back(colours[component[i] % 8]);
+        // Very hacky way to visualize the clusters
+        // but scatter does not allow
+        // for point colours in cpp
+        // (as fas as I can tell)
+        matplotlibcpp::plot(x,y,c[0]);
+        x.clear();
+        y.clear();
+        c.clear();
     }
     of.close();
+
+    std::cout << "Visualizing results..." << std::endl;
+    // matplotlibcpp::scatter(x,y,1);
+    matplotlibcpp::show();
+
     return 0;
 }
