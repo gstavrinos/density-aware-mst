@@ -36,7 +36,7 @@ class DensityAwareMST{
         ~DensityAwareMST(){}
 
         roboskel_msgs::ClusteredLaserScans opt(const roboskel_msgs::LaserScans&, const unsigned);
-        std::pair<std::vector<int>, int> opt(const std::vector<std::pair<double, double>>);
+        std::pair<std::vector<int>, int> opt(const std::vector<std::pair<double, double>>, const bool=false);
         void visualizeResultTree() const;
         void createDottyGraph() const;
         void printResultTree();

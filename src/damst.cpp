@@ -125,8 +125,8 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
                 lmi = i;
             }
         }
-        std::cout <<"maxw:";
-        std::cout << maxw << std::endl;
+        // std::cout <<"maxw:";
+        // std::cout << maxw << std::endl;
 
         if (thinking_of_stopping and maxw < last_maxw) {
             optimizing = false;
@@ -154,9 +154,9 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
         for (size_t i=0;i<num_components;i++) {
             s += score(subweights[i]);
         }
-        std::cout << "Score = " << s << std::endl;
-        std::cout << "BestScore = " << best_score << std::endl;
-        std::cout << "NumComponents = " << num_components << std::endl;
+        // std::cout << "Score = " << s << std::endl;
+        // std::cout << "BestScore = " << best_score << std::endl;
+        // std::cout << "NumComponents = " << num_components << std::endl;
         if (s >= best_score) {
             num_no_improv = s==best_score ? num_no_improv+1 : 0;
             if (num_no_improv >= max_no_improv) {
@@ -190,7 +190,7 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
     std::vector<int> component (boost::num_vertices (*gr));
     msg.num_clusters = boost::connected_components(*gr, &component[0]);
 
-    std::cout << msg.num_clusters << std::endl;
+    // std::cout << msg.num_clusters << std::endl;
 
     std::vector<unsigned> tmp;
     const size_t s = component.size();
@@ -212,7 +212,7 @@ roboskel_msgs::ClusteredLaserScans DensityAwareMST::opt(const roboskel_msgs::Las
     return msg;
 }
 
-std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pair<double, double>> points) {
+std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pair<double, double>> points, const bool debug) {
 
     std::cout << "Generating tree..." << std::endl;
     generateTree(points);
@@ -242,8 +242,8 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pai
                 lmi = i;
             }
         }
-        std::cout <<"maxw:";
-        std::cout << maxw << std::endl;
+        // std::cout <<"maxw:";
+        // std::cout << maxw << std::endl;
 
         if (thinking_of_stopping and maxw < last_maxw) {
             optimizing = false;
@@ -271,9 +271,9 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pai
         for (size_t i=0;i<num_components;i++) {
             s += score(subweights[i]);
         }
-        std::cout << "Score = " << s << std::endl;
-        std::cout << "BestScore = " << best_score << std::endl;
-        std::cout << "NumComponents = " << num_components << std::endl;
+        // std::cout << "Score = " << s << std::endl;
+        // std::cout << "BestScore = " << best_score << std::endl;
+        // std::cout << "NumComponents = " << num_components << std::endl;
         if (s >= best_score) {
             num_no_improv = s==best_score ? num_no_improv+1 : 0;
             if (num_no_improv >= max_no_improv) {
@@ -293,6 +293,23 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pai
     }
 
     std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
+    if (debug) {
+        std::cout << "Writing tree to file..." << std::endl;
+        std::ofstream of;
+        of.open("/home/gstavrinos/damst_full_tree.txt");
+        EdgeIter eiter, eiter_end;
+        for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
+
+        of << boost::source(*eiter, *graph) << " " << boost::target(*eiter, *graph) << std::endl;
+        }
+        of.close();
+        of.open("/home/gstavrinos/damst_removed_edges.txt");
+        for (auto edge:edges_to_remove) {
+            of << edge.first << " " << edge.second << std::endl;
+        }
+        of.close();
+    }
+
     for (auto edge:edges_to_remove) {
         remove_edge(edge.first, edge.second, *gr);
     }
@@ -308,7 +325,7 @@ double DensityAwareMST::score(const std::vector<double> w) const {
     for (auto i:w) {
         tot_weight += i;
     }
-    std::cout << "TOTWEIGHT = " << tot_weight << std::endl;
+    // std::cout << "TOTWEIGHT = " << tot_weight << std::endl;
     if (tot_weight > 0) { 
         return pow(w.size(),2) / (1 * tot_weight);
     }
