@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    result = mst.opt(points);
+    result = mst.opt(points, true);
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Overall time = " << std::chrono::duration_cast<std::chrono::seconds> (end - begin).count() << " seconds." << std::endl;
@@ -48,26 +48,27 @@ int main(int argc, char **argv) {
     of.open(argv[2]);
     // First line is the number of clusters
     of << num_clusters << std::endl;
-    std::string colours[8] = {"b.", "g.", "r.", "c.", "m.", "y.", "k.", "w."};
+    std::string colours[6] = {"b.", "g.", "r.", "c.", "m.", "k."};
     for (size_t i=0;i<s;i++) {
         of << points[i].first << "," << points[i].second << "," << component[i] << std::endl;
-        x.push_back(points[i].first);
-        y.push_back(points[i].second);
-        c.push_back(colours[component[i] % 8]);
+
         // Very hacky way to visualize the clusters
         // but scatter does not allow
         // for point colours in cpp
         // (as fas as I can tell)
-        matplotlibcpp::plot(x,y,c[0]);
-        x.clear();
-        y.clear();
-        c.clear();
+        // x.push_back(points[i].first);
+        // y.push_back(points[i].second);
+        // c.push_back(colours[component[i] % 6]);
+        // matplotlibcpp::plot(x,y,c[0]);
+        // x.clear();
+        // y.clear();
+        // c.clear();
     }
     of.close();
+    // mst.createDottyGraph();
 
-    std::cout << "Visualizing results..." << std::endl;
-    // matplotlibcpp::scatter(x,y,1);
-    matplotlibcpp::show();
+    // std::cout << "Visualizing results..." << std::endl;
+    // matplotlibcpp::show();
 
     return 0;
 }
