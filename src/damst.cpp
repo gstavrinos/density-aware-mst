@@ -348,7 +348,7 @@ double DensityAwareMST::dist(const roboskel_msgs::LaserScans& ls, const size_t i
 }
 
 double DensityAwareMST::dist(const std::pair<double, double> p1, const std::pair<double, double> p2) const {
-    return sqrt(pow(p1.first - p2.first, 2) + pow(p2.second - p2.second, 2));
+    return sqrt(pow(p1.first - p2.first, 2) + pow(p1.second - p2.second, 2));
 }
 
 // Seeing dots instead of edge labels?
