@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 pointsf = sys.argv[1]
 edgesf = sys.argv[2]
 removed_edgesf = sys.argv[3]
+show_removed = bool(sys.argv[4])
+show_edges = bool(sys.argv[5])
 
 points = []
 num_clusters = 0
@@ -47,5 +49,19 @@ for i in xrange(len(points)):
     x,y = points[i]
     c = hsv(float(clusters[i])/num_clusters)
     ax.scatter(x, y, c=c)
+
+if show_edges:
+    for i in xrange(len(edges)):
+        p1, p2 = edges[i]
+        x = [points[p1][0],points[p2][0]]
+        y = [points[p1][1],points[p2][1]]
+        ax.plot(x,y,c="#000000")
+
+if show_removed:
+    for i in xrange(len(removed_edges)):
+        p1, p2 = removed_edges[i]
+        x = [points[p1][0],points[p2][0]]
+        y = [points[p1][1],points[p2][1]]
+        ax.plot(x,y,c="#aaaaaa")
 
 plt.show()
