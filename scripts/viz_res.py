@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 pointsf = sys.argv[1]
 edgesf = sys.argv[2]
 removed_edgesf = sys.argv[3]
-show_removed = sys.argv[4] == "True"
-show_edges = sys.argv[5] == "True"
-show_clusters = sys.argv[6] == "True"
+show_removed = sys.argv[4] == "True" or sys.argv[4] == "true"
+show_edges = sys.argv[5] == "True" or sys.argv[5] == "true"
+show_clusters = sys.argv[6] == "True" or sys.argv[6] == "true"
+
 
 points = []
 num_clusters = 0
