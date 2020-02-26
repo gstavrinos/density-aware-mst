@@ -229,13 +229,23 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pai
     double best_score = 0.0;
 
     int cnt = 0;
+    double minw = 100;
+    double maxw = 0;
 
     double meanw = 0;
     for (size_t i=0;i<weights.size();i++){
         meanw += weights[i];
+        minw = minw>weights[i] ? weights[i] : minw;
+        maxw = maxw<weights[i] ? weights[i] : maxw;
     }
     meanw /= weights.size();
+    std::cout << "min=" << minw << std::endl;
+    std::cout << "max=" << maxw << std::endl;
+    std::cout << "mean=" << meanw << std::endl;
     meanw += 0.975*meanw;
+    std::cout << "mean=" << meanw << std::endl;
+    std::cout << "median=" << weights[int(weights.size()/2)] << std::endl;
+    meanw = weights[int(weights.size()/2)];
 
     for (size_t i=0;i<edges.size();i++){
         if (weights[i] > meanw){
@@ -262,7 +272,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pai
         // if (thinking_of_stopping and maxw < last_maxw) {
             // optimizing = false;
             // continue;
-        // }
+        // <
         // // And cut all the other edges that we know they generate a better score
         // for (auto edge:edges_to_remove) {
             // remove_edge(edge.first, edge.second, *gr);
@@ -334,14 +344,86 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pai
     return std::pair<std::vector<int>, int>(component, num_clusters);
 }
 
+std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pair<double, double>> points, const bool debug) {
+
+    std::cout << "Generating tree..." << std::endl;
+    generateTree(points);
+    std::cout << "Optimizing..." << std::endl;
+
+    std::vector<Edge> edges_to_remove;
+
+    double best_score = 0.0;
+
+    for (size_t i=0;i<edges.size();i++){
+        std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
+        for (auto edge:edges_to_remove) {
+            remove_edge(edge.first, edge.second, *gr);
+        }
+        remove_edge(edges[i].first, edges[i].second, *gr);
+
+        std::vector<int> component (boost::num_vertices (*gr));
+        size_t num_components = boost::connected_components(*gr, &component[0]);
+        std::vector<std::vector<double>> subweights(num_components);
+        for (size_t i=0; i < component.size(); i++) {
+            for (size_t j=0;j<edges.size();j++) {
+                if (edges[j].first == i or edges[j].second == i) {
+                    subweights[component[i]].push_back(weights[j]);
+                }
+            }
+        }
+        double s = 0.0;
+        for (size_t i=0;i<num_components;i++) {
+            s += score(subweights[i]);
+        }
+        if (s >= best_score) {
+            best_score = s;
+            edges_to_remove.push_back(edges[i]);
+        }
+        if (stopt()) {
+            break;
+        }
+    }
+
+    std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
+    if (debug) {
+        std::cout << "Writing tree to file..." << std::endl;
+        std::ofstream of;
+        of.open("/home/gstavrinos/damst_full_tree.txt");
+        EdgeIter eiter, eiter_end;
+        for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
+
+        of << boost::source(*eiter, *graph) << " " << boost::target(*eiter, *graph) << std::endl;
+        }
+        of.close();
+        of.open("/home/gstavrinos/damst_removed_edges.txt");
+        for (auto edge:edges_to_remove) {
+            of << edge.first << " " << edge.second << std::endl;
+        }
+        of.close();
+    }
+
+    for (auto edge:edges_to_remove) {
+        remove_edge(edge.first, edge.second, *gr);
+    }
+
+    std::vector<int> component (boost::num_vertices (*gr));
+    int num_clusters = boost::connected_components(*gr, &component[0]);
+
+    return std::pair<std::vector<int>, int>(component, num_clusters);
+}
+
+bool DensityAwareMST::stopt() {
+    return false;
+}
+
 double DensityAwareMST::score(const std::vector<double> w) const {
     double tot_weight = 0.0;
     for (auto i:w) {
         tot_weight += i;
     }
-    // std::cout << "TOTWEIGHT = " << tot_weight << std::endl;
     if (tot_weight > 0) { 
-        return pow(w.size(),2) / (1 * tot_weight);
+        // return pow(w.size(),2) / (1 * tot_weight);
+        return pow(w.size(),1) / (1 * tot_weight);
     }
     else {
         return 0.0;
