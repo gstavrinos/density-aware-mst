@@ -1,6 +1,5 @@
 #include <chrono>
 #include "damst/damst.hpp"
-#include "matplotlibcpp.h"
 
 int main(int argc, char **argv) {
     if (argc < 3) {
@@ -30,7 +29,7 @@ int main(int argc, char **argv) {
 
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    result = mst.opt(points, true);
+    result = mst.opt2(points, true);
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout << "Overall time = " << std::chrono::duration_cast<std::chrono::seconds> (end - begin).count() << " seconds." << std::endl;
