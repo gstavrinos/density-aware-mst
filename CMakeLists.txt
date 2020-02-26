@@ -21,8 +21,6 @@ set(${LIBRARY_TARGET_NAME}_HDR
     include/damst/damst.hpp
 )
 
-find_package(Python2 COMPONENTS Development NumPy)
-
 find_package(Boost REQUIRED COMPONENTS
     graph
 )
@@ -50,8 +48,7 @@ install(TARGETS ${LIBRARY_TARGET_NAME}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${Python2_INCLUDE_DIRS} ${Python2_NumPy_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${catkin_LIBRARIES} Python2::Python Python2::NumPy) 
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${catkin_LIBRARIES}) 
 
 add_executable(test_damst2 test/test_damst2.cpp)
 target_link_libraries(test_damst2 ${LIBRARY_TARGET_NAME} ${catkin_LIBRARIES})
