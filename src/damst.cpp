@@ -318,20 +318,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt(const std::vector<std::pai
 
     std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
     if (debug) {
-        std::cout << "Writing tree to file..." << std::endl;
-        std::ofstream of;
-        of.open("/home/gstavrinos/damst_full_tree.txt");
-        EdgeIter eiter, eiter_end;
-        for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
-
-        of << boost::source(*eiter, *graph) << " " << boost::target(*eiter, *graph) << std::endl;
-        }
-        of.close();
-        of.open("/home/gstavrinos/damst_removed_edges.txt");
-        for (auto edge:edges_to_remove) {
-            of << edge.first << " " << edge.second << std::endl;
-        }
-        of.close();
+        dbgSave(edges_to_remove);
     }
 
     for (auto edge:edges_to_remove) {
@@ -354,54 +341,58 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
 
     double best_score = 0.0;
 
+    std::vector<Edge> edges_(edges);
+    std::vector<double> weights_(weights);
+    std::vector<size_t> erasedi;
+
     for (size_t i=0;i<edges.size();i++){
         std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
-        for (auto edge:edges_to_remove) {
-            remove_edge(edge.first, edge.second, *gr);
+        std::vector<Edge> edges2_(edges);
+        std::vector<double> weights2_(weights);
+        for (size_t j=0; j < edges_to_remove.size(); j++) {
+            remove_edge(edges_to_remove[j].first, edges_to_remove[j].second, *gr);
+            edges2_.erase(edges2_.begin()+erasedi[j]);
+            weights2_.erase(weights2_.begin()+erasedi[j]);
         }
-        remove_edge(edges[i].first, edges[i].second, *gr);
+        double maxw = -1;
+        size_t maxi = 0;
+        for (size_t j=0; j<edges_.size(); j++) {
+            maxw = weights_[j] > maxw ? weights_[j] : maxw;
+            maxi = weights_[j] > maxw ? j : maxi;
+        }
+        remove_edge(edges_[maxi].first, edges_[maxi].second, *gr);
 
         std::vector<int> component (boost::num_vertices (*gr));
         size_t num_components = boost::connected_components(*gr, &component[0]);
         std::vector<std::vector<double>> subweights(num_components);
-        for (size_t i=0; i < component.size(); i++) {
-            for (size_t j=0;j<edges.size();j++) {
-                if (edges[j].first == i or edges[j].second == i) {
-                    subweights[component[i]].push_back(weights[j]);
+        for (size_t k=0; k < component.size(); k++) {
+            for (size_t j=0; j<edges2_.size(); j++) {
+                if (edges2_[j].first == k or edges2_[j].second == k) {
+                    subweights[component[k]].push_back(weights2_[j]);
                 }
             }
         }
         double s = 0.0;
-        for (size_t i=0;i<num_components;i++) {
-            s += score(subweights[i]);
+        for (size_t k=0; k<num_components; k++) {
+            s += score(subweights[k]);
         }
-        if (s >= best_score) {
+        if (s > best_score) {
             best_score = s;
-            edges_to_remove.push_back(edges[i]);
+            edges_to_remove.push_back(edges[maxi]);
+            erasedi.push_back(maxi);
         }
+        edges_.erase(edges_.begin()+maxi);
+        weights_.erase(weights_.begin()+maxi);
         if (stopt()) {
             break;
         }
     }
 
-    std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
     if (debug) {
-        std::cout << "Writing tree to file..." << std::endl;
-        std::ofstream of;
-        of.open("/home/gstavrinos/damst_full_tree.txt");
-        EdgeIter eiter, eiter_end;
-        for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
-
-        of << boost::source(*eiter, *graph) << " " << boost::target(*eiter, *graph) << std::endl;
-        }
-        of.close();
-        of.open("/home/gstavrinos/damst_removed_edges.txt");
-        for (auto edge:edges_to_remove) {
-            of << edge.first << " " << edge.second << std::endl;
-        }
-        of.close();
+        dbgSave(edges_to_remove);
     }
 
+    std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
     for (auto edge:edges_to_remove) {
         remove_edge(edge.first, edge.second, *gr);
     }
@@ -410,6 +401,23 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
     int num_clusters = boost::connected_components(*gr, &component[0]);
 
     return std::pair<std::vector<int>, int>(component, num_clusters);
+}
+
+void DensityAwareMST::dbgSave(const std::vector<Edge> edges_to_remove) {
+    std::cout << "Writing tree to file..." << std::endl;
+    std::ofstream of;
+    of.open("/home/gstavrinos/damst_full_tree.txt");
+    EdgeIter eiter, eiter_end;
+    for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
+
+    of << boost::source(*eiter, *graph) << " " << boost::target(*eiter, *graph) << std::endl;
+    }
+    of.close();
+    of.open("/home/gstavrinos/damst_removed_edges.txt");
+    for (auto edge:edges_to_remove) {
+        of << edge.first << " " << edge.second << std::endl;
+    }
+    of.close();
 }
 
 bool DensityAwareMST::stopt() {
