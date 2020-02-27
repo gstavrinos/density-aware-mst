@@ -50,24 +50,7 @@ int main(int argc, char **argv) {
     std::string colours[6] = {"b.", "g.", "r.", "c.", "m.", "k."};
     for (size_t i=0;i<s;i++) {
         of << points[i].first << "," << points[i].second << "," << component[i] << std::endl;
-
-        // Very hacky way to visualize the clusters
-        // but scatter does not allow
-        // for point colours in cpp
-        // (as fas as I can tell)
-        // x.push_back(points[i].first);
-        // y.push_back(points[i].second);
-        // c.push_back(colours[component[i] % 6]);
-        // matplotlibcpp::plot(x,y,c[0]);
-        // x.clear();
-        // y.clear();
-        // c.clear();
     }
     of.close();
-    // mst.createDottyGraph();
-
-    // std::cout << "Visualizing results..." << std::endl;
-    // matplotlibcpp::show();
-
     return 0;
 }
