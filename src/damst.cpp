@@ -2,6 +2,41 @@
 
 namespace damst {
 
+int partition(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& weights, size_t start, size_t end) {
+    double pivot = weights[end];
+
+    size_t pivi = start;
+    DensityAwareMST::Edge e;
+    double w;
+    for(size_t i=start; i<end; i++) {
+        if(weights[i] <= pivot) {
+            w = weights[i];
+            e = edges[i];
+            weights[i] = weights[pivi];
+            edges[i] = edges[pivi];
+            weights[pivi] = w;
+            edges[pivi] = e;
+            pivi++;
+        }
+    }
+
+    w = weights[end];
+    e = edges[end];
+    weights[end] = weights[pivi];
+    edges[end] = edges[pivi];
+    weights[pivi] = w;
+    edges[pivi] = e;
+
+    return pivi;
+}
+
+void quicksort(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& weights, size_t start, size_t end) {
+    if(start<end) {
+        size_t pivi = partition(edges, weights, start, end);
+        quicksort(edges, weights, start, pivi-1);
+        quicksort(edges, weights, pivi+1, end);
+    }
+}
 size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
     const size_t ss = ls.scans.size();
     num_nodes = 0;
@@ -335,40 +370,36 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
 
     std::cout << "Generating tree..." << std::endl;
     generateTree(points);
+    std::cout << "Sorting..." << std::endl;
+    quicksort(edges, weights, 0, weights.size()-1);
     std::cout << "Optimizing..." << std::endl;
 
-    std::vector<Edge> edges_to_remove;
+    std::vector<bool> edges_to_remove(edges.size());
+    for (size_t i=0; i<edges.size(); i++) {
+        edges_to_remove[i] = false;
+    }
 
     double best_score = 0.0;
 
-    std::vector<Edge> edges_(edges);
-    std::vector<double> weights_(weights);
-    std::vector<size_t> erasedi;
-
-    for (size_t i=0;i<edges.size();i++){
+    for (int i=edges.size()-1; i>=0; i--) {
         std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
-        std::vector<Edge> edges2_(edges);
-        std::vector<double> weights2_(weights);
-        for (size_t j=0; j < edges_to_remove.size(); j++) {
-            remove_edge(edges_to_remove[j].first, edges_to_remove[j].second, *gr);
-            edges2_.erase(edges2_.begin()+erasedi[j]);
-            weights2_.erase(weights2_.begin()+erasedi[j]);
+        for (int j=edges.size()-1; j > i; j--) {
+            if (edges_to_remove[j]) {
+                remove_edge(edges[j].first, edges[j].second, *gr);
+            }
         }
-        double maxw = -1;
-        size_t maxi = 0;
-        for (size_t j=0; j<edges_.size(); j++) {
-            maxw = weights_[j] > maxw ? weights_[j] : maxw;
-            maxi = weights_[j] > maxw ? j : maxi;
-        }
-        remove_edge(edges_[maxi].first, edges_[maxi].second, *gr);
+        remove_edge(edges[i].first, edges[i].second, *gr);
 
         std::vector<int> component (boost::num_vertices (*gr));
         size_t num_components = boost::connected_components(*gr, &component[0]);
         std::vector<std::vector<double>> subweights(num_components);
         for (size_t k=0; k < component.size(); k++) {
-            for (size_t j=0; j<edges2_.size(); j++) {
-                if (edges2_[j].first == k or edges2_[j].second == k) {
-                    subweights[component[k]].push_back(weights2_[j]);
+            for (int j=edges.size()-1; j >= 0; j--) {
+                if (j >=i and (edges_to_remove[j] or j==i)) {
+                    continue;
+                }
+                if (edges[j].first == k or edges[j].second == k) {
+                    subweights[component[k]].push_back(weights[j]);
                 }
             }
         }
@@ -378,11 +409,8 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
         }
         if (s > best_score) {
             best_score = s;
-            edges_to_remove.push_back(edges[maxi]);
-            erasedi.push_back(maxi);
+            edges_to_remove[i] = true;
         }
-        edges_.erase(edges_.begin()+maxi);
-        weights_.erase(weights_.begin()+maxi);
         if (stopt()) {
             break;
         }
@@ -393,8 +421,10 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
     }
 
     std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
-    for (auto edge:edges_to_remove) {
-        remove_edge(edge.first, edge.second, *gr);
+    for (size_t i=0; i<edges.size(); i++) {
+        if (edges_to_remove[i]){
+            remove_edge(edges[i].first, edges[i].second, *gr);
+        }
     }
 
     std::vector<int> component (boost::num_vertices (*gr));
@@ -416,6 +446,25 @@ void DensityAwareMST::dbgSave(const std::vector<Edge> edges_to_remove) {
     of.open("/home/gstavrinos/damst_removed_edges.txt");
     for (auto edge:edges_to_remove) {
         of << edge.first << " " << edge.second << std::endl;
+    }
+    of.close();
+}
+
+void DensityAwareMST::dbgSave(const std::vector<bool> edges_to_remove) {
+    std::cout << "Writing tree to file..." << std::endl;
+    std::ofstream of;
+    of.open("/home/gstavrinos/damst_full_tree.txt");
+    EdgeIter eiter, eiter_end;
+    for (boost::tie(eiter, eiter_end) = boost::edges(*graph); eiter != eiter_end; eiter++) {
+
+    of << boost::source(*eiter, *graph) << " " << boost::target(*eiter, *graph) << std::endl;
+    }
+    of.close();
+    of.open("/home/gstavrinos/damst_removed_edges.txt");
+    for (size_t i=0; i<edges.size(); i++) {
+        if (edges_to_remove[i]){
+            of << edges[i].first << " " << edges[i].second << std::endl;
+        }
     }
     of.close();
 }
