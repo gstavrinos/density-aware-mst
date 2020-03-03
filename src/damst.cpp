@@ -30,6 +30,27 @@ int partition(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& we
     return pivi;
 }
 
+int partition(std::vector<double>& weights, size_t start, size_t end) {
+    double pivot = weights[end];
+
+    size_t pivi = start;
+    double w;
+    for(size_t i=start; i<end; i++) {
+        if(weights[i] <= pivot) {
+            w = weights[i];
+            weights[i] = weights[pivi];
+            weights[pivi] = w;
+            pivi++;
+        }
+    }
+
+    w = weights[end];
+    weights[end] = weights[pivi];
+    weights[pivi] = w;
+
+    return pivi;
+}
+
 void quicksort(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& weights, size_t start, size_t end) {
     if(start<end) {
         size_t pivi = partition(edges, weights, start, end);
@@ -37,6 +58,15 @@ void quicksort(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& w
         quicksort(edges, weights, pivi+1, end);
     }
 }
+
+void quicksort(std::vector<double>& weights, size_t start, size_t end) {
+    if(start<end) {
+        size_t pivi = partition(weights, start, end);
+        quicksort(weights, start, pivi-1);
+        quicksort(weights, pivi+1, end);
+    }
+}
+
 size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const unsigned nn) {
     const size_t ss = ls.scans.size();
     num_nodes = 0;
@@ -474,13 +504,37 @@ bool DensityAwareMST::stopt() {
 }
 
 double DensityAwareMST::score(const std::vector<double> w) const {
-    double tot_weight = 0.0;
-    for (auto i:w) {
-        tot_weight += i;
-    }
-    if (tot_weight > 0) { 
-        // return pow(w.size(),2) / (1 * tot_weight);
-        return pow(w.size(),1) / (1 * tot_weight);
+    if (w.size() > 0) {
+        double tot_weight = 0.0;
+        std::vector<double> sw(w);
+        quicksort(sw, 0, sw.size()-1);
+        // for (auto i:w) {
+            // tot_weight += i;
+            // std::cout << i << std::endl;
+        // }
+        // std::cout << "===" << std::endl;
+
+        tot_weight = sw[sw.size()/2];
+
+        if (tot_weight > 0) {
+            // double meanw = tot_weight / w.size();
+            double meanw = tot_weight;
+            // meanw += 0.3 * meanw;
+            // meanw += 0.4985 * meanw;
+            // meanw += 0.2 * meanw;
+            int node_weight = 0;
+            tot_weight = 0;
+            for (auto i:w) {
+                if (i <= meanw) {
+                    tot_weight += i;
+                    node_weight += 1;
+                }
+                else {
+                    tot_weight -= i;
+                }
+            }
+            return node_weight * tot_weight;
+        }
     }
     else {
         return 0.0;
