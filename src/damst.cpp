@@ -423,6 +423,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
         std::vector<int> component (boost::num_vertices (*gr));
         size_t num_components = boost::connected_components(*gr, &component[0]);
         std::vector<std::vector<double>> subweights(num_components);
+        std::vector<std::vector<Edge>> subedges(num_components);
         for (size_t k=0; k < component.size(); k++) {
             for (int j=edges.size()-1; j >= 0; j--) {
                 if (j >=i and (edges_to_remove[j] or j==i)) {
@@ -430,12 +431,13 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
                 }
                 if (edges[j].first == k or edges[j].second == k) {
                     subweights[component[k]].push_back(weights[j]);
+                    subedges[component[k]].push_back(edges[j]);
                 }
             }
         }
         double s = 0.0;
         for (size_t k=0; k<num_components; k++) {
-            s += score(subweights[k]);
+            s += score(subedges[k], subweights[k], *gr);//score(subweights[k]);
         }
         if (s > best_score) {
             best_score = s;
@@ -503,38 +505,54 @@ bool DensityAwareMST::stopt() {
     return false;
 }
 
+double DensityAwareMST::score(const std::vector<Edge> e, const std::vector<double> w, const Graph g) const {
+    double tot_weight = 0;
+    for (int i=0; i < e.size(); i++) {
+        tot_weight += w[i] / ((int(degree(source(e[i],g),g)) + int(degree(target(e[i],g),g)))/e.size());
+    }
+    if (tot_weight > 0) {
+        tot_weight = pow(e.size()-1, 1)/tot_weight;
+    }
+    return tot_weight;
+}
+
 double DensityAwareMST::score(const std::vector<double> w) const {
     if (w.size() > 0) {
-        double tot_weight = 0.0;
-        std::vector<double> sw(w);
-        quicksort(sw, 0, sw.size()-1);
-        // for (auto i:w) {
-            // tot_weight += i;
-            // std::cout << i << std::endl;
-        // }
-        // std::cout << "===" << std::endl;
-
-        tot_weight = sw[sw.size()/2];
-
-        if (tot_weight > 0) {
-            // double meanw = tot_weight / w.size();
-            double meanw = tot_weight;
-            // meanw += 0.3 * meanw;
-            // meanw += 0.4985 * meanw;
-            // meanw += 0.2 * meanw;
-            int node_weight = 0;
-            tot_weight = 0;
-            for (auto i:w) {
-                if (i <= meanw) {
-                    tot_weight += i;
-                    node_weight += 1;
-                }
-                else {
-                    tot_weight -= i;
-                }
-            }
-            return node_weight * tot_weight;
+        double tot_weight = 0;
+        for (auto i:w) {
+            tot_weight += i;
         }
+        // double tot_weight = 0.0;
+        // std::vector<double> sw(w);
+        // quicksort(sw, 0, sw.size()-1);
+        // // for (auto i:w) {
+            // // tot_weight += i;
+            // // std::cout << i << std::endl;
+        // // }
+        // // std::cout << "===" << std::endl;
+
+        // tot_weight = sw[sw.size()/2];
+
+        // if (tot_weight > 0) {
+            // // double meanw = tot_weight / w.size();
+            // double meanw = tot_weight;
+            // // meanw += 0.3 * meanw;
+            // // meanw += 0.4985 * meanw;
+            // // meanw += 0.2 * meanw;
+            // int node_weight = 0;
+            // tot_weight = 0;
+            // for (auto i:w) {
+                // if (i <= meanw) {
+                    // tot_weight += i;
+                    // node_weight += 1;
+                // }
+                // else {
+                    // tot_weight -= i;
+                // }
+            // }
+            // return node_weight * tot_weight;
+        // }
+        return pow((w.size()-1),2)/tot_weight;
     }
     else {
         return 0.0;

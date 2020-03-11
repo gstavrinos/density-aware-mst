@@ -26,6 +26,8 @@ class DensityAwareMST{
     public:
         using Graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_weight_t, double>>;
         using EdgeDesc = boost::graph_traits<Graph>::edge_descriptor;
+        using VertexDesc = boost::graph_traits<Graph>::vertex_descriptor;
+        using DegreeSize = boost::graph_traits<Graph>::degree_size_type;
         using EdgeIter = boost::graph_traits<Graph>::edge_iterator;
         using Edge = std::pair<unsigned, unsigned>;
         std::vector<Edge> edges;
@@ -58,6 +60,7 @@ class DensityAwareMST{
         void updateGraphBasedOnResult(const roboskel_msgs::LaserScans& ls);
         void updateGraphBasedOnResult(const std::vector<std::pair<double, double>>);
         double score(const std::vector<double>) const;
+        double score(const std::vector<Edge>, const std::vector<double>, const Graph) const;
 
 };
 
