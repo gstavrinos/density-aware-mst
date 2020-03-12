@@ -114,6 +114,7 @@ size_t DensityAwareMST::generateTree(const roboskel_msgs::LaserScans& ls, const 
 void DensityAwareMST::generateTree(const std::vector<std::pair<double,double>> points) {
     edges.clear();
     weights.clear();
+    vertices = std::vector<std::pair<double,double>>(points);
     for (size_t i=0; i<points.size(); i++) {
         for (size_t j=i+1; j<points.size(); j++) {
             edges.push_back(Edge(i,j));
@@ -424,6 +425,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
         size_t num_components = boost::connected_components(*gr, &component[0]);
         std::vector<std::vector<double>> subweights(num_components);
         std::vector<std::vector<Edge>> subedges(num_components);
+        // std::vector<std::vector<std::pair<double,double>>> subvertices(num_components);
         for (size_t k=0; k < component.size(); k++) {
             for (int j=edges.size()-1; j >= 0; j--) {
                 if (j >=i and (edges_to_remove[j] or j==i)) {
@@ -432,12 +434,14 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
                 if (edges[j].first == k or edges[j].second == k) {
                     subweights[component[k]].push_back(weights[j]);
                     subedges[component[k]].push_back(edges[j]);
+                    // subvertices[component[k]].push_back(points[component[k]]);
                 }
             }
         }
         double s = 0.0;
         for (size_t k=0; k<num_components; k++) {
-            s += score(subedges[k], subweights[k], *gr);//score(subweights[k]);
+            // s += score(subvertices[k], subedges[k], subweights[k], *gr); //score(subedges[k], subweights[k], *gr);//score(subweights[k]);
+            s += score(subweights[k]);
         }
         if (s > best_score) {
             best_score = s;
@@ -505,58 +509,65 @@ bool DensityAwareMST::stopt() {
     return false;
 }
 
+double DensityAwareMST::score(const std::vector<std::pair<double,double>> v, const std::vector<Edge> e, const std::vector<double> w, const Graph g) const {
+    double scr = 0;
+    double minx = 10000000;
+    double miny = 10000000;
+    double maxx = -10000000;
+    double maxy = -10000000;
+
+    for (auto v_:v) {
+        minx = v_.first < minx ? v_.first : minx;
+        miny = v_.second < miny ? v_.second : miny;
+        maxx = v_.first > maxx ? v_.first : maxx;
+        maxy = v_.second > maxy ? v_.second : maxy;
+    }
+
+    // for (int i=0; i < e.size(); i++) {
+        // scr += w[i] / ((int(degree(source(e[i],g),g)) + int(degree(target(e[i],g),g)))/e.size());
+    // }
+    // if (scr > 0) {
+        // scr = pow(e.size()+1, 1)/scr;
+    // }
+    return scr;
+}
+
 double DensityAwareMST::score(const std::vector<Edge> e, const std::vector<double> w, const Graph g) const {
     double tot_weight = 0;
     for (int i=0; i < e.size(); i++) {
         tot_weight += w[i] / ((int(degree(source(e[i],g),g)) + int(degree(target(e[i],g),g)))/e.size());
     }
     if (tot_weight > 0) {
-        tot_weight = pow(e.size()-1, 1)/tot_weight;
+        tot_weight = pow(e.size()+1, 1)/tot_weight;
     }
     return tot_weight;
 }
 
 double DensityAwareMST::score(const std::vector<double> w) const {
+    double scr = 0;
     if (w.size() > 0) {
+        std::vector<double> sw(w);
+        quicksort(sw, 0, sw.size()-1);
+
+        double medw = sw[sw.size()/2];
+
+        int node_weight = 0;
         double tot_weight = 0;
         for (auto i:w) {
             tot_weight += i;
+            if (i <= sw[sw.size()-1]-medw) {
+                scr += i;
+                node_weight += 1;
+            }
+            else {
+                scr -= i;
+            }
         }
-        // double tot_weight = 0.0;
-        // std::vector<double> sw(w);
-        // quicksort(sw, 0, sw.size()-1);
-        // // for (auto i:w) {
-            // // tot_weight += i;
-            // // std::cout << i << std::endl;
-        // // }
-        // // std::cout << "===" << std::endl;
-
-        // tot_weight = sw[sw.size()/2];
-
-        // if (tot_weight > 0) {
-            // // double meanw = tot_weight / w.size();
-            // double meanw = tot_weight;
-            // // meanw += 0.3 * meanw;
-            // // meanw += 0.4985 * meanw;
-            // // meanw += 0.2 * meanw;
-            // int node_weight = 0;
-            // tot_weight = 0;
-            // for (auto i:w) {
-                // if (i <= meanw) {
-                    // tot_weight += i;
-                    // node_weight += 1;
-                // }
-                // else {
-                    // tot_weight -= i;
-                // }
-            // }
-            // return node_weight * tot_weight;
-        // }
-        return pow((w.size()-1),2)/tot_weight;
+        return tot_weight/node_weight;
+        // return node_weight * scr / ((w.size()+1-node_weight));
+        // return node_weight*(w.size()+1) / ((w.size()+1-node_weight));
     }
-    else {
-        return 0.0;
-    }
+    return scr;
 }
 
 double DensityAwareMST::dist(const roboskel_msgs::LaserScans& ls, const size_t i1, const size_t j1, const size_t i2, const size_t j2) const {

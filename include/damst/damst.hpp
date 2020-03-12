@@ -32,6 +32,7 @@ class DensityAwareMST{
         using Edge = std::pair<unsigned, unsigned>;
         std::vector<Edge> edges;
         std::vector<double> weights;
+        std::vector<std::pair<double,double>> vertices;
 
         DensityAwareMST(){}
 
@@ -61,6 +62,7 @@ class DensityAwareMST{
         void updateGraphBasedOnResult(const std::vector<std::pair<double, double>>);
         double score(const std::vector<double>) const;
         double score(const std::vector<Edge>, const std::vector<double>, const Graph) const;
+        double score(const std::vector<std::pair<double,double>>, const std::vector<Edge>, const std::vector<double>, const Graph) const;
 
 };
 
