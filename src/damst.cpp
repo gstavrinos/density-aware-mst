@@ -135,13 +135,13 @@ void DensityAwareMST::updateGraphBasedOnResult(const std::vector<std::pair<doubl
         int s = boost::source(result[i], *graph);
         int t = boost::target(result[i], *graph);
         for (auto p:points) {
-            s_entropy += dist(p, points[s]);
-            t_entropy += dist(p, points[t]);
+            s_entropy += 1/pow(dist(p, points[s]),2);
+            t_entropy += 1/pow(dist(p, points[t]),2);
         }
         edges.push_back(Edge(s, t));
         // TODO optimize this by accessing it through the graph instead of calculating it again
         // weights.push_back(dist(points[s], points[t]));
-        weights.push_back(pow((s_entropy+t_entropy)/2,2));
+        weights.push_back(abs(s_entropy - t_entropy));
     }
     graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], points.size());
 }
