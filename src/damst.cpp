@@ -30,7 +30,7 @@ int partition(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& we
     return pivi;
 }
 
-int partition(std::vector<double>& weights, size_t start, size_t end) {
+int partition(std::vector<double>& weights, int start, int end) {
     double pivot = weights[end];
 
     size_t pivi = start;
@@ -51,15 +51,15 @@ int partition(std::vector<double>& weights, size_t start, size_t end) {
     return pivi;
 }
 
-void quicksort(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& weights, size_t start, size_t end) {
+void quicksort(std::vector<DensityAwareMST::Edge>& edges, std::vector<double>& weights, int start, int end) {
     if(start<end) {
-        size_t pivi = partition(edges, weights, start, end);
+        int pivi = partition(edges, weights, start, end);
         quicksort(edges, weights, start, pivi-1);
         quicksort(edges, weights, pivi+1, end);
     }
 }
 
-void quicksort(std::vector<double>& weights, size_t start, size_t end) {
+void quicksort(std::vector<double>& weights, int start, int end) {
     if(start<end) {
         size_t pivi = partition(weights, start, end);
         quicksort(weights, start, pivi-1);
@@ -130,11 +130,18 @@ void DensityAwareMST::updateGraphBasedOnResult(const std::vector<std::pair<doubl
     edges.clear();
     weights.clear();
     for (size_t i=0;i<result.size();i++) {
+        double s_entropy = 0;
+        double t_entropy = 0;
         int s = boost::source(result[i], *graph);
         int t = boost::target(result[i], *graph);
+        for (auto p:points) {
+            s_entropy += dist(p, points[s]);
+            t_entropy += dist(p, points[t]);
+        }
         edges.push_back(Edge(s, t));
         // TODO optimize this by accessing it through the graph instead of calculating it again
-        weights.push_back(dist(points[s], points[t]));
+        // weights.push_back(dist(points[s], points[t]));
+        weights.push_back(pow((s_entropy+t_entropy)/2,2));
     }
     graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], points.size());
 }
@@ -545,28 +552,32 @@ double DensityAwareMST::score(const std::vector<Edge> e, const std::vector<doubl
 
 double DensityAwareMST::score(const std::vector<double> w) const {
     double scr = 0;
-    if (w.size() > 0) {
-        std::vector<double> sw(w);
-        quicksort(sw, 0, sw.size()-1);
-
-        double medw = sw[sw.size()/2];
-
-        int node_weight = 0;
-        double tot_weight = 0;
-        for (auto i:w) {
-            tot_weight += i;
-            if (i <= sw[sw.size()-1]-medw) {
-                scr += i;
-                node_weight += 1;
-            }
-            else {
-                scr -= i;
-            }
-        }
-        return tot_weight/node_weight;
-        // return node_weight * scr / ((w.size()+1-node_weight));
-        // return node_weight*(w.size()+1) / ((w.size()+1-node_weight));
+    for (auto i:w) {
+        scr += i;
     }
+    scr = (w.size()+1) / scr;
+    // if (w.size() > 0) {
+        // std::vector<double> sw(w);
+        // quicksort(sw, 0, sw.size()-1);
+
+        // double medw = sw[sw.size()/2];
+
+        // int node_weight = 0;
+        // double tot_weight = 0;
+        // for (auto i:w) {
+            // tot_weight += i;
+            // if (i <= sw[sw.size()-1]-medw) {
+                // scr += i;
+                // node_weight += 1;
+            // }
+            // else {
+                // scr -= i;
+            // }
+        // }
+        // return tot_weight/node_weight;
+        // // return node_weight * scr / ((w.size()+1-node_weight));
+        // // return node_weight*(w.size()+1) / ((w.size()+1-node_weight));
+    // }
     return scr;
 }
 
