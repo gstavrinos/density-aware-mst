@@ -135,8 +135,14 @@ void DensityAwareMST::updateGraphBasedOnResult(const std::vector<std::pair<doubl
         int s = boost::source(result[i], *graph);
         int t = boost::target(result[i], *graph);
         for (auto p:points) {
-            s_entropy += 1/pow(dist(p, points[s]),2);
-            t_entropy += 1/pow(dist(p, points[t]),2);
+            double p1 = pow(dist(p, points[s]),2);
+            double p2 = pow(dist(p, points[t]),2);
+            if (p1 > 0) {
+                s_entropy += 100/p1;
+            }
+            if (p2 > 0) {
+                t_entropy += 100/p2;
+            }
         }
         edges.push_back(Edge(s, t));
         // TODO optimize this by accessing it through the graph instead of calculating it again
@@ -419,6 +425,30 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
 
     double best_score = 0.0;
 
+    double mean = 0;
+
+    for (auto w:weights) {
+        mean += w;
+    }
+
+    mean /= weights.size();
+
+    double sigma = 0;
+    double sum = 0;
+
+    for (auto w:weights) {
+        sum += pow(w - mean,2);
+    }
+
+    sigma = sqrt(sum/weights.size()-1);
+
+    double threshold = mean + 0*sigma;
+
+    std::cout << "Mean, threshold, sigma"<< std::endl;
+    std::cout << mean << std::endl;
+    std::cout << threshold << std::endl;
+    std::cout << sigma << std::endl;
+
     for (int i=edges.size()-1; i>=0; i--) {
         std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
         for (int j=edges.size()-1; j > i; j--) {
@@ -450,7 +480,8 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
             // s += score(subvertices[k], subedges[k], subweights[k], *gr); //score(subedges[k], subweights[k], *gr);//score(subweights[k]);
             s += score(subweights[k]);
         }
-        if (s > best_score) {
+        // if (true or s > best_score) {
+        if (weights[i] >= threshold) {
             best_score = s;
             edges_to_remove[i] = true;
         }
