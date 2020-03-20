@@ -135,8 +135,8 @@ void DensityAwareMST::updateGraphBasedOnResult(const std::vector<std::pair<doubl
         int s = boost::source(result[i], *graph);
         int t = boost::target(result[i], *graph);
         for (auto p:points) {
-            double p1 = pow(dist(p, points[s]),2);
-            double p2 = pow(dist(p, points[t]),2);
+            double p1 = pow(dist(p, points[s]),1);
+            double p2 = pow(dist(p, points[t]),1);
             if (p1 > 0) {
                 s_entropy += 100/p1;
             }
@@ -442,7 +442,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
 
     sigma = sqrt(sum/weights.size()-1);
 
-    double threshold = mean + 0*sigma;
+    double threshold = mean + sigma;
 
     std::cout << "Mean, threshold, sigma"<< std::endl;
     std::cout << mean << std::endl;
