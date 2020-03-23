@@ -138,16 +138,17 @@ void DensityAwareMST::updateGraphBasedOnResult(const std::vector<std::pair<doubl
             double p1 = pow(dist(p, points[s]),1);
             double p2 = pow(dist(p, points[t]),1);
             if (p1 > 0) {
-                s_entropy += 100/p1;
+                s_entropy += 1/p1;
             }
             if (p2 > 0) {
-                t_entropy += 100/p2;
+                t_entropy += 1/p2;
             }
         }
         edges.push_back(Edge(s, t));
         // TODO optimize this by accessing it through the graph instead of calculating it again
         // weights.push_back(dist(points[s], points[t]));
         weights.push_back(abs(s_entropy - t_entropy));
+        // weights.push_back(pow(s_entropy - t_entropy,2));
     }
     graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], points.size());
 }
@@ -425,7 +426,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
 
     double best_score = 0.0;
 
-    double mean = 0;
+    mean = 0;
 
     for (auto w:weights) {
         mean += w;
@@ -440,7 +441,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
         sum += pow(w - mean,2);
     }
 
-    sigma = sqrt(sum/weights.size()-1);
+    sigma = sqrt(sum/weights.size());
 
     double threshold = mean + sigma;
 
@@ -449,7 +450,9 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
     std::cout << threshold << std::endl;
     std::cout << sigma << std::endl;
 
-    for (int i=edges.size()-1; i>=0; i--) {
+    for (int i=edges.size()-1; i>=edges.size()-1; i--) {
+    // for (int i=edges.size()-1; i>=0; i--) {
+    // for (int i=0; i<=30; i++) {
         std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
         for (int j=edges.size()-1; j > i; j--) {
             if (edges_to_remove[j]) {
@@ -480,8 +483,9 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
             // s += score(subvertices[k], subedges[k], subweights[k], *gr); //score(subedges[k], subweights[k], *gr);//score(subweights[k]);
             s += score(subweights[k]);
         }
-        // if (true or s > best_score) {
-        if (weights[i] >= threshold) {
+        s /=num_components;
+        if (s < sigma) {
+        // if (weights[i] >= threshold) {
             best_score = s;
             edges_to_remove[i] = true;
         }
@@ -583,10 +587,15 @@ double DensityAwareMST::score(const std::vector<Edge> e, const std::vector<doubl
 
 double DensityAwareMST::score(const std::vector<double> w) const {
     double scr = 0;
+    double sum = 0;
+
     for (auto i:w) {
-        scr += i;
+        sum += pow(i - mean,2);
     }
-    scr = (w.size()+1) / scr;
+
+    double sigma = sqrt(sum/weights.size());
+    scr = sigma;
+    // scr = (w.size()+1) / scr;
     // if (w.size() > 0) {
         // std::vector<double> sw(w);
         // quicksort(sw, 0, sw.size()-1);

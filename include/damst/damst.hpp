@@ -49,6 +49,7 @@ class DensityAwareMST{
         std::shared_ptr<Graph> graph;
         std::vector<EdgeDesc> result;
         size_t num_nodes;
+        double mean;
 
         size_t generateTree(const roboskel_msgs::LaserScans&, const unsigned);
         void generateTree(const std::vector<std::pair<double, double>>);
