@@ -147,8 +147,9 @@ void DensityAwareMST::updateGraphBasedOnResult(const std::vector<std::pair<doubl
         edges.push_back(Edge(s, t));
         // TODO optimize this by accessing it through the graph instead of calculating it again
         // weights.push_back(dist(points[s], points[t]));
-        weights.push_back(abs(s_entropy - t_entropy));
-        // weights.push_back(pow(s_entropy - t_entropy,2));
+        // weights.push_back(pow(dist(points[s],points[t]),2)*abs(s_entropy - t_entropy));
+        weights.push_back(pow(dist(points[s],points[t]),2)*pow(s_entropy - t_entropy,2));
+        // weights.push_back(dist(points[s],points[t])*pow(s_entropy - t_entropy,2));
     }
     graph = std::make_shared<Graph>(&edges[0], &edges[0]+numberOfEdges(), &weights[0], points.size());
 }
@@ -450,7 +451,7 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
     std::cout << threshold << std::endl;
     std::cout << sigma << std::endl;
 
-    for (int i=edges.size()-1; i>=edges.size()-1; i--) {
+    for (int i=edges.size()-1; i>=edges.size()-300; i--) {
     // for (int i=edges.size()-1; i>=0; i--) {
     // for (int i=0; i<=30; i++) {
         std::shared_ptr<Graph> gr = std::make_shared<Graph>(*graph);
