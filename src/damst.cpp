@@ -484,8 +484,10 @@ std::pair<std::vector<int>, int> DensityAwareMST::opt2(const std::vector<std::pa
             // s += score(subvertices[k], subedges[k], subweights[k], *gr); //score(subedges[k], subweights[k], *gr);//score(subweights[k]);
             s += score(subweights[k]);
         }
-        s /=num_components;
-        if (s < sigma) {
+        // s /=num_components;
+        if (s > best_score) {
+            std::cout << best_score << std::endl;
+        // if (s < sigma) {
         // if (weights[i] >= threshold) {
             best_score = s;
             edges_to_remove[i] = true;
@@ -587,15 +589,24 @@ double DensityAwareMST::score(const std::vector<Edge> e, const std::vector<doubl
 }
 
 double DensityAwareMST::score(const std::vector<double> w) const {
+
     double scr = 0;
-    double sum = 0;
 
     for (auto i:w) {
-        sum += pow(i - mean,2);
+        scr += i;
     }
 
-    double sigma = sqrt(sum/weights.size());
-    scr = sigma;
+    scr = (w.size()-1);///pow(scr,2);
+
+    // double scr = 0;
+    // double sum = 0;
+
+    // for (auto i:w) {
+        // sum += pow(i - mean,2);
+    // }
+
+    // double sigma = sqrt(sum/weights.size());
+    // scr = sigma;
     // scr = (w.size()+1) / scr;
     // if (w.size() > 0) {
         // std::vector<double> sw(w);
